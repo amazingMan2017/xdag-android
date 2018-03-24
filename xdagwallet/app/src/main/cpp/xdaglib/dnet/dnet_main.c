@@ -1,0 +1,65 @@
+/* dnet: main file; T11.231-T13.789; $DVS:time$ */
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <errno.h>
+#if !defined(_WIN32) && !defined(_WIN64)
+#include <signal.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#endif
+#include "dnet_crypt.h"
+#include "dnet_database.h"
+#include "dnet_history.h"
+#include "dnet_connection.h"
+#include "dnet_threads.h"
+#include "dnet_log.h"
+#include "dnet_command.h"
+#include "dnet_main.h"
+
+extern int getdtablesize(void);
+
+#ifdef __LDuS__
+#include <ldus/system/kernel.h>
+static void catcher(int signum) {
+	ldus_block_signal(0, signum);	/* заблокировать его, чтобы самому повторно не получить */
+	ldus_kill_task(0, signum);	/* передать сигнал дальше */
+}
+#endif
+
+int dnet_init() {
+    struct dnet_thread *thread_watchdog,*thread_collector;
+    int i = 0, err = 0, res;
+    const char *mess = 0;
+
+    if (system_init() || dnet_threads_init() || dnet_hosts_init()) {
+        err = 4;
+        printf("initializing error\n");
+        return err;
+    }
+
+    if ((err = dnet_crypt_init(DNET_VERSION))) {
+        //sleep(3);
+        return err;
+    }
+
+    //create watch dog thread and collector thread
+    thread_watchdog = malloc(sizeof(struct dnet_thread));
+    thread_watchdog->type = DNET_THREAD_WATCHDOG;
+    res = dnet_thread_create(thread_watchdog);
+
+    thread_collector = malloc(sizeof(struct dnet_thread));
+    thread_collector->type = DNET_THREAD_COLLECTOR;
+    res = dnet_thread_create(thread_collector);
+
+    if (res) { err = 3; return err; }
+
+    return err;
+}
+
+void dnet_uninit(){
+    //TODO: kill some thread release some resource
+    dnet_crypt_uninit();
+}
