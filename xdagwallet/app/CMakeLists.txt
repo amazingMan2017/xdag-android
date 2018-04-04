@@ -520,7 +520,43 @@ set(SSL_COMMON_SRC_FILES
 
 #xdaglib
 set(XDAG_SRC_FILES
+                src/main/cpp/xdaglib/dus/crc_c.c
+                src/main/cpp/xdaglib/dus/dfslib_crypt.c
+                src/main/cpp/xdaglib/dus/dfslib_random.c
+                src/main/cpp/xdaglib/dus/dfslib_string.c
+                src/main/cpp/xdaglib/dus/dfsrsa.c
+                src/main/cpp/xdaglib/dnet/dnet_command.c
+                src/main/cpp/xdaglib/dnet/dnet_connection.c
+                src/main/cpp/xdaglib/dnet/dnet_crypt.c
+                src/main/cpp/xdaglib/dnet/dnet_database.c
+                src/main/cpp/xdaglib/dnet/dnet_files.c
+                src/main/cpp/xdaglib/dnet/dnet_log.c
+                src/main/cpp/xdaglib/dnet/dnet_main.c
+                src/main/cpp/xdaglib/dnet/dnet_packet.c
+                src/main/cpp/xdaglib/dnet/dnet_stream.c
+                src/main/cpp/xdaglib/dnet/dnet_threads.c
+                src/main/cpp/xdaglib/dnet/dnet_tap.c
+
+                src/main/cpp/xdaglib/client/address.c
+                src/main/cpp/xdaglib/client/block.c
+                src/main/cpp/xdaglib/client/crypt.c
+                src/main/cpp/xdaglib/client/hash.c
+                src/main/cpp/xdaglib/client/log.c
+                src/main/cpp/xdaglib/client/memory.c
+                src/main/cpp/xdaglib/client/netdb.c
+                src/main/cpp/xdaglib/client/pool.c
+                src/main/cpp/xdaglib/client/sha256.c
+                src/main/cpp/xdaglib/client/storage.c
+                src/main/cpp/xdaglib/client/sync.c
+                src/main/cpp/xdaglib/client/transport.c
+                src/main/cpp/xdaglib/client/wallet.c
+                src/main/cpp/xdaglib/client/xdagmain.c
+
+                src/main/cpp/xdaglib/wrapper/xdagwrapper.c
                 )
+#xdag flags
+set(XDAG_COMMON_FLAGS
+        -DHAVE_STRUCT_TIMESPEC -D_TIMESPEC_DEFINED -DDFSTOOLS -DCHEATCOIN -DNDEBUG -D_CRT_SECURE_NO_WARNINGS -Wall)
 
 #ssl common flags
 set(SSL_COMMON_FLAGS
@@ -545,6 +581,7 @@ include_directories(${CRYPTO_INCLUDE_PATH})
 
 #cflags
 add_definitions(${SSL_COMMON_FLAGS})
+add_definitions(${XDAG_COMMON_FLAGS})
 
 #if target abi is arm
 if(${ANDROID_ABI} STREQUAL "armeabi-v7a")
@@ -565,8 +602,11 @@ add_library(crypto SHARED ${CRYPTO_SRC_FILES})
 set(SSL_SRC_FILES ${SSL_COMMON_SRC_FILES})
 add_library(ssl SHARED ${SSL_SRC_FILES})
 
+#xdag
+add_library(xdag SHARED ${XDAG_SRC_FILES})
+
 #generate libraries
 target_link_libraries(crypto -ldl -lz)
 target_link_libraries(ssl crypto)
-
+target_link_libraries(xdag ssl crypto)
 

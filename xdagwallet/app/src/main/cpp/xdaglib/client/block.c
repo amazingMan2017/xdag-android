@@ -1014,7 +1014,7 @@ begin:
 		unsigned nblk;
 		
         //test is canceled while ui disconnected from the pool
-        pthread_testcancel();
+        pthread_iscancel(g_block_thread_t);
 
 		t0 = t;
 		t = get_timestamp();
@@ -1096,7 +1096,7 @@ begin:
 		xdag_show_state(ours ? ours->hash : 0);
 
         //test is canceled while ui disconnected from the pool
-        pthread_testcancel();
+        pthread_iscancel(g_block_thread_t);
 
 		while (get_timestamp() - t < 1024) {
 			sleep(1);

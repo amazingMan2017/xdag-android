@@ -491,7 +491,7 @@ void xdag_show_state(xdag_hash_t hash)
     memset(state,0,256);
 
     if (!g_app_callback_func)
-        return -1;
+        return;
 
     if (g_xdag_state < XDAG_STATE_XFER){
         balance_state = en_balance_not_ready;

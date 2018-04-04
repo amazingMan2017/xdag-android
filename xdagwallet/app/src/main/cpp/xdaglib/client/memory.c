@@ -109,6 +109,12 @@ void xdag_free(void *mem)
 {
 }
 
+int xdag_free_all(void)
+{
+	g_pos = 0;
+	return 0;
+}
+
 void xdag_mem_finish(void)
 {
 	if (g_fd < 0) return;

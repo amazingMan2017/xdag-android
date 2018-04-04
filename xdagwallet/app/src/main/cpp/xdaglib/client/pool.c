@@ -259,11 +259,11 @@ static void *miner_net_thread(void *arg)
 
     g_is_pool_thread_run = 1;
     while (!g_xdag_sync_on) {
-        pthread_testcancel();
+        pthread_iscancel(pthread_self());
         sleep(1);
     }
 
-    pthread_testcancel();
+    pthread_iscancel(pthread_self());
 
     ndata = 0;
     maxndata = sizeof(struct xdag_field);
@@ -366,7 +366,7 @@ static void *miner_net_thread(void *arg)
     for (;;) {
         struct pollfd p;
 
-        pthread_testcancel();
+        pthread_iscancel(g_pool_thread_t);
         pthread_mutex_lock(&g_pool_mutex);
 
         if (g_socket < 0) {
@@ -471,7 +471,7 @@ static void *miner_net_thread(void *arg)
             pthread_mutex_unlock(&g_pool_mutex);
         }
 
-        pthread_testcancel();
+        pthread_iscancel(pthread_self());
     }
 
     pthread_cleanup_pop(0);

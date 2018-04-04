@@ -189,7 +189,7 @@ int xdag_set_app_log_level(en_xdag_app_log_level level)
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
-#include <execinfo.h>
+//#include <execinfo.h>
 #include <ucontext.h>
 
 #define REG_(name) sprintf(buf + strlen(buf), #name "=%llx, ", (unsigned long long)uc->uc_mcontext.gregs[REG_ ## name])
@@ -213,11 +213,11 @@ static void sigCatch(int signum, siginfo_t *info, void *context)
 		xdag_fatal("%s", buf);
 	}
 #endif
-	frames = backtrace(callstack, 100);
-	strs = backtrace_symbols(callstack, frames);
+	//frames = backtrace(callstack, 100);
+	//strs = backtrace_symbols(callstack, frames);
 
 	for (i = 0; i < frames; ++i) {
-		xdag_fatal("%s", strs[i]);
+        xdag_app_fatal("%s", strs[i]);
 	}
 	signal(signum, SIG_DFL);
 	kill(getpid(), signum);
