@@ -551,9 +551,11 @@ set(XDAG_SRC_FILES
                 src/main/cpp/xdaglib/client/transport.c
                 src/main/cpp/xdaglib/client/wallet.c
                 src/main/cpp/xdaglib/client/xdagmain.c
-
                 src/main/cpp/xdaglib/wrapper/xdagwrapper.c
+
+                src/main/cpp/libxdag_jni.cpp
                 )
+
 #xdag flags
 set(XDAG_COMMON_FLAGS
         -DHAVE_STRUCT_TIMESPEC -D_TIMESPEC_DEFINED -DDFSTOOLS -DCHEATCOIN -DNDEBUG -D_CRT_SECURE_NO_WARNINGS -Wall)

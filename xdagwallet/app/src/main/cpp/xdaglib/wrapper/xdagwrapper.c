@@ -64,14 +64,14 @@ const char* xdag_get_version(){
     return XDAG_VERSION;
 }
 
-void xdag_wrapper_init(const void* callback_object,
-                              st_xdag_app_msg* (*callback_func)(const void* callback_object,st_xdag_event *event)){
-    g_app_callback_func = callback_func;
-    g_callback_object = callback_object;
-}
-
 void xdag_send_coin(const char* amount,const char* address){
     xdag_xfer_coin(amount,address);
+}
+
+void xdag_wrapper_init(const void* callback_object,
+                       st_xdag_app_msg* (*callback_func)(const void* callback_object,st_xdag_event *event)){
+    g_app_callback_func = callback_func;
+    g_callback_object = callback_object;
 }
 
 void report_ui_walletinit_event(en_xdag_event_type event_type,const char* err_msg){
