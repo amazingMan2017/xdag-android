@@ -1,90 +1,21 @@
 cmake_minimum_required(VERSION 3.4.1)
 
-#Libraries OpenSSL
+PROJECT(xdaglib)
 
-#Libraries Xdag
-add_library(xdag
-            SHARED
+#crypto arm src files
+set(CRYPTO_ARM_SRC_FILES
+                src/main/cpp/openssl/crypto/aes/asm/aes-armv4.S
+                src/main/cpp/openssl/crypto/bn/asm/armv4-mont.S
+                src/main/cpp/openssl/crypto/sha/asm/sha1-armv4-large.S
+                src/main/cpp/openssl/crypto/sha/asm/sha256-armv4.S
+                src/main/cpp/openssl/crypto/sha/asm/sha512-armv4.S)
 
-            src/main/cpp/xdaglib/dus/crc_c.c
-            src/main/cpp/xdaglib/dus/dfslib_crypt.c
-            src/main/cpp/xdaglib/dus/dfslib_random.c
-            src/main/cpp/xdaglib/dus/dfslib_string.c
-            src/main/cpp/xdaglib/dus/dfsrsa.c
-            src/main/cpp/xdaglib/dnet/dnet_command.c
-            src/main/cpp/xdaglib/dnet/dnet_connection.c
-            src/main/cpp/xdaglib/dnet/dnet_crypt.c
-            src/main/cpp/xdaglib/dnet/dnet_database.c
-            src/main/cpp/xdaglib/dnet/dnet_files.c
-            src/main/cpp/xdaglib/dnet/dnet_log.c
-            src/main/cpp/xdaglib/dnet/dnet_main.c
-            src/main/cpp/xdaglib/dnet/dnet_packet.c
-            src/main/cpp/xdaglib/dnet/dnet_stream.c
-            src/main/cpp/xdaglib/dnet/dnet_threads.c
-            src/main/cpp/xdaglib/dnet/dnet_tap.c
-
-            src/main/cpp/xdaglib/client/address.c
-            src/main/cpp/xdaglib/client/block.c
-            src/main/cpp/xdaglib/client/crypt.c
-            src/main/cpp/xdaglib/client/hash.c
-            src/main/cpp/xdaglib/client/log.c
-            src/main/cpp/xdaglib/client/memory.c
-            src/main/cpp/xdaglib/client/netdb.c
-            src/main/cpp/xdaglib/client/pool.c
-            src/main/cpp/xdaglib/client/sha256.c
-            src/main/cpp/xdaglib/client/storage.c
-            src/main/cpp/xdaglib/client/sync.c
-            src/main/cpp/xdaglib/client/transport.c
-            src/main/cpp/xdaglib/client/wallet.c
-            src/main/cpp/xdaglib/client/xdagmain.c
-
-            src/main/cpp/xdaglib/wrapper/xdagwrapper.c
-            )
-
-#ssl
-add_library(ssl
-            SHARED
-            src/main/cpp/openssl/ssl/s2_meth.c
-            src/main/cpp/openssl/ssl/s2_srvr.c
-            src/main/cpp/openssl/ssl/s2_clnt.c
-            src/main/cpp/openssl/ssl/s2_lib.c
-            src/main/cpp/openssl/ssl/s2_enc.c
-            src/main/cpp/openssl/ssl/s2_pkt.c
-            src/main/cpp/openssl/ssl/s3_meth.c
-            src/main/cpp/openssl/ssl/s3_srvr.c
-            src/main/cpp/openssl/ssl/s3_clnt.c
-            src/main/cpp/openssl/ssl/s3_lib.c
-            src/main/cpp/openssl/ssl/s3_enc.c
-            src/main/cpp/openssl/ssl/s3_pkt.c
-            src/main/cpp/openssl/ssl/s3_both.c
-            src/main/cpp/openssl/ssl/s23_meth.c
-            src/main/cpp/openssl/ssl/s23_srvr.c
-            src/main/cpp/openssl/ssl/s23_clnt.c
-            src/main/cpp/openssl/ssl/s23_lib.c
-            src/main/cpp/openssl/ssl/s23_pkt.c
-            src/main/cpp/openssl/ssl/t1_meth.c
-            src/main/cpp/openssl/ssl/t1_srvr.c
-            src/main/cpp/openssl/ssl/t1_clnt.c
-            src/main/cpp/openssl/ssl/t1_lib.c
-            src/main/cpp/openssl/ssl/t1_enc.c
-            src/main/cpp/openssl/ssl/t1_reneg.c
-            src/main/cpp/openssl/ssl/ssl_lib.c
-            src/main/cpp/openssl/ssl/ssl_err2.c
-            src/main/cpp/openssl/ssl/ssl_cert.c
-            src/main/cpp/openssl/ssl/ssl_sess.c
-            src/main/cpp/openssl/ssl/ssl_ciph.c
-            src/main/cpp/openssl/ssl/ssl_stat.c
-            src/main/cpp/openssl/ssl/ssl_rsa.c
-            src/main/cpp/openssl/ssl/ssl_asn1.c
-            src/main/cpp/openssl/ssl/ssl_txt.c
-            src/main/cpp/openssl/ssl/ssl_algs.c
-            src/main/cpp/openssl/ssl/bio_ssl.c
-            src/main/cpp/openssl/ssl/ssl_err.c
-            src/main/cpp/openssl/ssl/kssl.c
-            )
+#crypto no arm src files
+set(CRYPTO_NON_ARM_SRC_FILES
+                src/main/cpp/openssl/crypto/aes/aes_core.c)
 
 #crypto src files
-set(CRYPTO_SRC_FILES
+set(CRYPTO_COMMON_SRC_FILES
                 src/main/cpp/openssl/crypto/cryptlib.c
                 src/main/cpp/openssl/crypto/mem.c
                 src/main/cpp/openssl/crypto/mem_clr.c
@@ -104,6 +35,7 @@ set(CRYPTO_SRC_FILES
                 src/main/cpp/openssl/crypto/aes/aes_misc.c
                 src/main/cpp/openssl/crypto/aes/aes_ofb.c
                 src/main/cpp/openssl/crypto/aes/aes_wrap.c
+                src/main/cpp/openssl/crypto/asn1/a_int.c
                 src/main/cpp/openssl/crypto/asn1/a_bitstr.c
                 src/main/cpp/openssl/crypto/asn1/a_bool.c
                 src/main/cpp/openssl/crypto/asn1/a_bytes.c
@@ -545,21 +477,60 @@ set(CRYPTO_SRC_FILES
                 src/main/cpp/openssl/crypto/x509v3/v3err.c
                 )
 
-#crypto arm src files
-set(CRYPTO_ARM_SRC_FILES
-                src/main/cpp/openssl/crypto/aes/asm/aes-armv4.S
-                src/main/cpp/openssl/crypto/bn/asm/armv4-mont.S
-                src/main/cpp/openssl/crypto/sha/asm/sha1-armv4-large.S
-                src/main/cpp/openssl/crypto/sha/asm/sha256-armv4.S
-                src/main/cpp/openssl/crypto/sha/asm/sha512-armv4.S)
+#ssl common src files
+set(SSL_COMMON_SRC_FILES
+                src/main/cpp/openssl/ssl/s2_meth.c
+                src/main/cpp/openssl/ssl/s2_srvr.c
+                src/main/cpp/openssl/ssl/s2_clnt.c
+                src/main/cpp/openssl/ssl/s2_lib.c
+                src/main/cpp/openssl/ssl/s2_enc.c
+                src/main/cpp/openssl/ssl/s2_pkt.c
+                src/main/cpp/openssl/ssl/s3_meth.c
+                src/main/cpp/openssl/ssl/s3_srvr.c
+                src/main/cpp/openssl/ssl/s3_clnt.c
+                src/main/cpp/openssl/ssl/s3_lib.c
+                src/main/cpp/openssl/ssl/s3_enc.c
+                src/main/cpp/openssl/ssl/s3_pkt.c
+                src/main/cpp/openssl/ssl/s3_both.c
+                src/main/cpp/openssl/ssl/s23_meth.c
+                src/main/cpp/openssl/ssl/s23_srvr.c
+                src/main/cpp/openssl/ssl/s23_clnt.c
+                src/main/cpp/openssl/ssl/s23_lib.c
+                src/main/cpp/openssl/ssl/s23_pkt.c
+                src/main/cpp/openssl/ssl/t1_meth.c
+                src/main/cpp/openssl/ssl/t1_srvr.c
+                src/main/cpp/openssl/ssl/t1_clnt.c
+                src/main/cpp/openssl/ssl/t1_lib.c
+                src/main/cpp/openssl/ssl/t1_enc.c
+                src/main/cpp/openssl/ssl/t1_reneg.c
+                src/main/cpp/openssl/ssl/ssl_lib.c
+                src/main/cpp/openssl/ssl/ssl_err2.c
+                src/main/cpp/openssl/ssl/ssl_cert.c
+                src/main/cpp/openssl/ssl/ssl_sess.c
+                src/main/cpp/openssl/ssl/ssl_ciph.c
+                src/main/cpp/openssl/ssl/ssl_stat.c
+                src/main/cpp/openssl/ssl/ssl_rsa.c
+                src/main/cpp/openssl/ssl/ssl_asn1.c
+                src/main/cpp/openssl/ssl/ssl_txt.c
+                src/main/cpp/openssl/ssl/ssl_algs.c
+                src/main/cpp/openssl/ssl/bio_ssl.c
+                src/main/cpp/openssl/ssl/ssl_err.c
+                src/main/cpp/openssl/ssl/kssl.c
+    )
 
-#crypto no arm src files
-set(CRYPTO_NON_ARM_SRC_FILES
-                src/main/cpp/openssl/crypto/aes/aes_core.c)
+#xdaglib
+set(XDAG_SRC_FILES
+                )
+
+#ssl common flags
+set(SSL_COMMON_FLAGS
+        -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -DL_ENDIAN
+        -DOPENSSL_NO_CAMELLIA -DOPENSSL_NO_CAPIENG -DOPENSSL_NO_CAST -DOPENSSL_NO_CMS -DOPENSSL_NO_GMP -DOPENSSL_NO_IDEA -DOPENSSL_NO_JPAKE -DOPENSSL_NO_MD2 -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5 -DOPENSSL_NO_SHA0 -DOPENSSL_NO_RFC3779 -DOPENSSL_NO_SEED -DOPENSSL_NO_STORE -DOPENSSL_NO_WHIRLPOOL
+        -DOPENSSL_NO_HW -DOPENSSL_NO_ENGINE -DZLIB -DNO_WINDOWS_BRAINDEATH
+    )
 
 #crypto arm flags
-set(CRYPTO_ARM_FLAGS
-                -DOPENSSL_BN_ASM_MONT -DAES_ASM -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM)
+set(CRYPTO_ARM_FLAGS -DOPENSSL_BN_ASM_MONT -DAES_ASM -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM)
 
 #cypto include path
 set(CRYPTO_INCLUDE_PATH
@@ -571,20 +542,31 @@ set(CRYPTO_INCLUDE_PATH
 
 #include directories
 include_directories(${CRYPTO_INCLUDE_PATH})
+
 #cflags
+add_definitions(${SSL_COMMON_FLAGS})
+
+#if target abi is arm
+if(${ANDROID_ABI} STREQUAL "armeabi-v7a")
+enable_language(ASM)
 add_definitions(${CRYPTO_ARM_FLAGS})
+set(CRYPTO_SRC_FILES ${CRYPTO_COMMON_SRC_FILES} ${CRYPTO_ARM_SRC_FILES})
+endif()
+
+#if target abi is x86
+if(${ANDROID_ABI} STREQUAL "x86")
+set(CRYPTO_SRC_FILES ${CRYPTO_COMMON_SRC_FILES} ${CRYPTO_NON_ARM_SRC_FILES})
+endif()
 
 #crypto
-add_library(crypto
-            SHARED
+add_library(crypto SHARED ${CRYPTO_SRC_FILES})
 
-            ${CRYPTO_ARM_SRC_FILES}
-            ${CRYPTO_SRC_FILES}
-            )
+#ssl
+set(SSL_SRC_FILES ${SSL_COMMON_SRC_FILES})
+add_library(ssl SHARED ${SSL_SRC_FILES})
 
 #generate libraries
-target_link_libraries(ssl)
-
 target_link_libraries(crypto -ldl -lz)
+target_link_libraries(ssl crypto)
 
-target_link_libraries(xdag -lssl -lcrypto -lpthread)
+
