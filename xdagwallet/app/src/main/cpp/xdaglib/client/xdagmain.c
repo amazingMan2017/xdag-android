@@ -509,7 +509,7 @@ void xdag_show_state(xdag_hash_t hash)
 
     strcpy(state, get_state());
 
-    xdag_app_info(" get hash address %s ",address);
+    xdag_app_debug(" get hash address %s ",address);
 
     st_xdag_event event;
     memset(&event,0,sizeof(st_xdag_event));

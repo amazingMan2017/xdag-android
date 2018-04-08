@@ -302,7 +302,7 @@ static void *miner_net_thread(void *arg)
         pthread_exit((void*)NULL);
     }
     if (fcntl(g_socket, F_SETFD, FD_CLOEXEC) == -1) {
-        xdag_err("pool  : can't set FD_CLOEXEC flag on socket %d, %s\n", g_socket, strerror(errno));
+        xdag_app_err("pool  : can't set FD_CLOEXEC flag on socket %d, %s\n", g_socket, strerror(errno));
     }
 
     // Fill in the address of server
@@ -526,7 +526,7 @@ int xdag_start_wallet_mainthread(const char *pool_arg)
 
     res = pthread_create(&g_pool_thread_t, 0, miner_net_thread, (void*)pool_arg);
 	if (res) {
-		printf(" miner_net_thread create failed \n");
+		xdag_app_err(" miner_net_thread create failed \n");
 		return -1;
 	}
 

@@ -87,9 +87,7 @@ static pthread_t g_block_thread_t;
 static uint64_t get_timestamp(void)
 {
 	struct timeval tp;
-
 	gettimeofday(&tp, 0);
-
 	return (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
 }
 
@@ -989,6 +987,7 @@ static void *work_thread(void *arg)
 {
     int oldcancelstate;
     int oldcanceltype;
+	xdag_time_t data = XDAG_ERA;
     xdag_time_t t = XDAG_ERA,conn_time = 0, sync_time = 0, t0;
 	int n_mining_threads = (int)(unsigned)(uintptr_t)arg, sync_thread_running = 0;
 	struct block_internal *ours;
@@ -1002,9 +1001,10 @@ static void *work_thread(void *arg)
 
 	// loading block from the local storage
 	g_xdag_state = XDAG_STATE_LOAD;
-    xdag_app_mess("Loading blocks from local storage...");
 	xdag_show_state(0);
-	xdag_load_blocks(t, get_timestamp(), &t, add_block_callback);
+	xdag_app_debug("Loading blocks from local storage start");
+	xdag_load_blocks(t, get_timestamp(), &data, add_block_callback);
+    xdag_app_debug("Loading blocks from local storage finished");
 
 begin:
     g_is_block_thread_run = 1;

@@ -11,6 +11,8 @@
 #endif
 #define LOGI(x...) __android_log_print(ANDROID_LOG_INFO,"XdagWallet",x)
 
+pthread_mutex_t g_process_mutex;
+
 st_xdag_app_msg* XdagWalletProcessCallback(const void *call_back_object, st_xdag_event* event){
 
     switch (event->event_type){
@@ -27,7 +29,6 @@ st_xdag_app_msg* XdagWalletProcessCallback(const void *call_back_object, st_xdag
         }
         return NULL;
     }
-
     return NULL;
 }
 
@@ -52,6 +53,9 @@ JNIEXPORT jint JNICALL Java_com_xdag_wallet_XdagWrapper_XdagConnect(
         JNIEnv *env,
         jobject *obj,
         jstring poolAddr) {
+
+    pthread_mutex_init(&g_process_mutex,NULL);
+
     jboolean isCopy = JNI_TRUE;
     const char* address = env->GetStringUTFChars(poolAddr,&isCopy);
     LOGI("pool address  %s",address);

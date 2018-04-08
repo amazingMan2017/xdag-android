@@ -48,17 +48,6 @@ int dnet_init() {
         return err;
     }
 
-    //create watch dog thread and collector thread
-    thread_watchdog = malloc(sizeof(struct dnet_thread));
-    thread_watchdog->type = DNET_THREAD_WATCHDOG;
-    res = dnet_thread_create(thread_watchdog);
-
-    thread_collector = malloc(sizeof(struct dnet_thread));
-    thread_collector->type = DNET_THREAD_COLLECTOR;
-    res = dnet_thread_create(thread_collector);
-
-    if (res) { err = 3; return err; }
-
     return err;
 }
 

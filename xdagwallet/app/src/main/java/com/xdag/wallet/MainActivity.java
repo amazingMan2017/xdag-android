@@ -1,5 +1,12 @@
 package com.xdag.wallet;
 
+import android.Manifest;
+import android.app.Activity;
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -7,10 +14,14 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
@@ -25,6 +36,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button btnXfer;
     private Thread xdagProcessThread;
     private static final String TAG = "XdagWallet";
+    private static final int PERMISSION_REQUESTCODE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         initView();
         initData();
+        initPermission();
     }
 
     private void initView() {
@@ -73,6 +86,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //            }
 //        });
 //        xdagProcessThread.start();
+    }
+
+    private void initPermission() {
+        List<String> permissionLists = new ArrayList<>();
+
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+            permissionLists.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+            permissionLists.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+        }
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED){
+            permissionLists.add(Manifest.permission.INTERNET);
+        }
+
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
+            permissionLists.add(Manifest.permission.CAMERA);
+        }
+
+        if(!permissionLists.isEmpty()){//说明肯定有拒绝的权限
+            ActivityCompat.requestPermissions(this, permissionLists.toArray(new String[permissionLists.size()]), PERMISSION_REQUESTCODE);
+        }else{
+            Toast.makeText(this, "all permission is allowed", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override

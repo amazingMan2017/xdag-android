@@ -18,7 +18,7 @@
 #include "../wrapper/xdagwrapper.h"
 
 #if defined(ANDROID) || defined(__ANDROID__)
-#define KEYFILE	    "/storage/sdcard0/xdag/dnet_key.dat"
+#define KEYFILE	    "/sdcard/xdag/dnet_key.dat"
 #else
 #define KEYFILE	    "dnet_key.dat"
 #endif
@@ -358,7 +358,7 @@ int dnet_crypt_init(const char *version) {
 
         struct dfslib_string str, str1;
         xdag_app_debug("dnet crypt generate %s start !!!",KEYFILE);
-        f = fopen(KEYFILE, "wb+");
+        f = fopen(KEYFILE, "wb");
 
         if (!f) {
             xdag_app_debug("dnet crypt generate %s failed %s  !!!",KEYFILE,strerror(errno));

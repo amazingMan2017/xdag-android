@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include "storage.h"
 #include "log.h"
 #include "xdagmain.h"
@@ -17,7 +18,12 @@
 #define SLASH "/"
 #endif
 
+#if defined(ANDROID) || defined(__ANDROID__)
+#define STORAGE_DIR0            "/sdcard/xdag/storage%s"
+#else
 #define STORAGE_DIR0            "storage%s"
+#endif
+
 #define STORAGE_DIR0_ARGS(t)    (g_xdag_testnet ? "-testnet" : "")
 #define STORAGE_DIR1            STORAGE_DIR0 SLASH "%02x"
 #define STORAGE_DIR1_ARGS(t)    STORAGE_DIR0_ARGS(t), (int)((t) >> 40)
@@ -39,13 +45,16 @@ static int correct_storage_sum(const char *path, int pos, const struct xdag_stor
 
 	if (f) {
 		if (fread(sums, sizeof(struct xdag_storage_sum), 256, f) != 256) {
-			fclose(f); xdag_err("Storag: sums file %s corrupted", path); return -1;
+			fclose(f);
+            xdag_app_err("Storag: sums file %s corrupted", path);
+            return -1;
 		}
 		rewind(f);
 	} else {
 		f = fopen(path, "wb");
 		if (!f) {
-			xdag_err("Storag: can't create file %s", path); return -1;
+            xdag_app_err("Storag: can't create file %s", path);
+            return -1;
 		}
 		memset(sums, 0, sizeof(sums));
 	}
@@ -57,7 +66,7 @@ static int correct_storage_sum(const char *path, int pos, const struct xdag_stor
 
 		if (sums[pos].size || sums[pos].sum) {
 			sums[pos].size = sums[pos].sum = 0;
-			xdag_err("Storag: corrupted, sums file %s, pos %x", path, pos);
+            xdag_app_err("Storag: corrupted, sums file %s, pos %x", path, pos);
 		}
 	}
 
@@ -65,7 +74,9 @@ static int correct_storage_sum(const char *path, int pos, const struct xdag_stor
 	sums[pos].sum += sum->sum;
 	
 	if (fwrite(sums, sizeof(struct xdag_storage_sum), 256, f) != 256) {
-		fclose(f); xdag_err("Storag: can't write file %s", path); return -1;
+		fclose(f);
+        xdag_app_err("Storag: can't write file %s", path);
+        return -1;
 	}
 	
 	fclose(f);
@@ -193,7 +204,9 @@ static int sort_callback(const void *l, const void *r)
 /* Calls a callback for all blocks from the repository that are in specified time interval; returns the number of blocks */
 uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *data, void *(*callback)(void *, void *))
 {
-	struct xdag_block buf[bufsize], *pbuf[bufsize];
+    xdag_app_debug("enter  xdag_load_blocks");
+
+    struct xdag_block buf[bufsize], *pbuf[bufsize];
 	struct xdag_storage_sum s;
 	char path[256];
 	struct stat st;
@@ -203,17 +216,23 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 
 	s.size = s.sum = 0;
 
+
 	while (start_time < end_time) {
 		sprintf(path, STORAGE_FILE, STORAGE_FILE_ARGS(start_time));
+
+        xdag_app_debug("load storage file path %s",path);
 
 		pthread_mutex_lock(&storage_mutex);
 		
 		f = fopen(path, "rb");
 		if (f) {
-			if (fseek(f, pos, SEEK_SET) < 0) todo = 0;
-			else todo = fread(buf, sizeof(struct xdag_block), bufsize, f);
+			if (fseek(f, pos, SEEK_SET) < 0)
+                todo = 0;
+			else
+                todo = fread(buf, sizeof(struct xdag_block), bufsize, f);
 			fclose(f);
 		} else {
+            xdag_app_err("laod storage file %s failed error %s",path,strerror(errno));
 			todo = 0;
 		}
 		

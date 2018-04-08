@@ -200,7 +200,7 @@ static void sigCatch(int signum, siginfo_t *info, void *context)
 	int frames, i;
 	char **strs;
 
-	xdag_fatal("Signal %d delivered", signum);
+	xdag_app_fatal("Signal %d delivered", signum);
 #ifdef __x86_64__
 	{
 		static char buf[0x100]; *buf = 0;
