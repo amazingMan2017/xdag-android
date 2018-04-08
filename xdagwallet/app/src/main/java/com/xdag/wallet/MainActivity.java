@@ -45,30 +45,34 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnConncet = (Button)findViewById(R.id.btn_connect);
         btnDisConnect = (Button)findViewById(R.id.btn_disconnect);
         btnXfer = (Button)findViewById(R.id.btn_xfer);
+
+        btnConncet.setOnClickListener(this);
+        btnDisConnect.setOnClickListener(this);
+        btnXfer.setOnClickListener(this);
     }
 
     private void initData(){
         EventBus.getDefault().register(this);
 
-        xdagProcessThread = new Thread(new Runnable() {
-            int runTimes = 0;
-            @Override
-            public void run() {
-                while(runTimes < 10){
-                    Log.d(TAG," send Msg to UI in Thread " + Thread.currentThread().getId());
-                    MessageEvent event = new MessageEvent();
-                    event.account = "xxxx";
-                    event.msgNo = runTimes ++;
-                    EventBus.getDefault().post(event);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
-        xdagProcessThread.start();
+//        xdagProcessThread = new Thread(new Runnable() {
+//            int runTimes = 0;
+//            @Override
+//            public void run() {
+//                while(runTimes < 10){
+//                    Log.d(TAG," send Msg to UI in Thread " + Thread.currentThread().getId());
+//                    MessageEvent event = new MessageEvent();
+//                    event.account = "xxxx";
+//                    event.msgNo = runTimes ++;
+//                    EventBus.getDefault().post(event);
+//                    try {
+//                        Thread.sleep(1000);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }
+//        });
+//        xdagProcessThread.start();
     }
 
     @Override

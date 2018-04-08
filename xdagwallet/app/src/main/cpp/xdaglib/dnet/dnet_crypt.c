@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <termios.h>
+#include <errno.h>
+#include <xdaglib/client/log.h>
 #include "system.h"
 #include "../dus/dfslib_random.h"
 #include "../dus/dfslib_crypt.h"
@@ -15,7 +17,11 @@
 #include "dnet_main.h"
 #include "../wrapper/xdagwrapper.h"
 
+#if defined(ANDROID) || defined(__ANDROID__)
+#define KEYFILE	    "/storage/sdcard0/xdag/dnet_key.dat"
+#else
 #define KEYFILE	    "dnet_key.dat"
+#endif
 #define PWDLEN	    64
 #define SECTOR_LOG  9
 #define SECTOR_SIZE (1 << SECTOR_LOG)
@@ -300,20 +306,23 @@ int dnet_crypt_init(const char *version) {
     int i;
     g_dnet_keys = malloc(sizeof(struct dnet_keys));
 	if (!g_dnet_keys) {
-		printf(" malloc memory for g_dnet_keys failed \n ");
+		xdag_app_err(" malloc memory for g_dnet_keys failed \n ");
 		return 1;
 	}
 
     keys = g_dnet_keys;
     dfslib_random_init();
+    xdag_app_debug("dnet crc init start");
     if (crc_init()) {
-        printf(" crc init error \n");
+        xdag_app_err(" crc init error \n");
         return 2;
     }
 
+    xdag_app_debug("dnet crypt init open dnet.dat start");
     f = fopen(KEYFILE, "rb");
     if (f) {
         if (fread(keys, sizeof(struct dnet_keys), 1, f) != 1) {
+                xdag_app_debug("dnet crypt init open %s failed generate it !!!",KEYFILE);
                 fclose(f);
                 f = 0;
         }
@@ -348,9 +357,11 @@ int dnet_crypt_init(const char *version) {
         char pwd[256], pwd1[256];
 
         struct dfslib_string str, str1;
-        f = fopen(KEYFILE, "wb");
+        xdag_app_debug("dnet crypt generate %s start !!!",KEYFILE);
+        f = fopen(KEYFILE, "wb+");
 
         if (!f) {
+            xdag_app_debug("dnet crypt generate %s failed %s  !!!",KEYFILE,strerror(errno));
             report_ui_walletinit_event(en_event_open_dnetfile_error,NULL);
             return 3;
         }
@@ -360,8 +371,8 @@ int dnet_crypt_init(const char *version) {
 
         res = (*g_input_password)("Set password", pwd, 256);
         if(res == -1){
+            xdag_app_debug("user cancel password type in");
             fclose(f);
-            dnet_log_printf("user cancel password type in");
             return -1;
         }
 
@@ -369,7 +380,7 @@ int dnet_crypt_init(const char *version) {
         res = (*g_input_password)("Re-type password", pwd1, 256);
         if(res == -1){
             fclose(f);
-            dnet_log_printf("user cancel password re-type in");
+            xdag_app_debug("user cancel password re-type in");
             return -1;
         }
         dfslib_utf8_string(&str1, pwd1, strlen(pwd1));
@@ -383,12 +394,12 @@ int dnet_crypt_init(const char *version) {
         res = (*g_input_password)("Type random keys", buf, 256);
         if(res == -1){
             fclose(f);
-            dnet_log_printf("user cancel random type in");
+            xdag_app_debug("user cancel random type in");
             return -1;
         }
 
         dfslib_random_fill(keys->pub.key, DNET_KEYLEN * sizeof(dfsrsa_t), 0, dfslib_utf8_string(&str, buf, strlen(buf)));
-        printf("Generating host keys... \n");
+        xdag_app_debug("Generating host keys... \n");
         g_keylen = DNET_KEYLEN;
 
         //generate public key and private key
@@ -404,6 +415,7 @@ int dnet_crypt_init(const char *version) {
 
         //store public and private key to dnet.dat
         if (fwrite(keys, sizeof(struct dnet_keys), 1, f) != 1) {
+            xdag_app_debug("dnet crypt generate dnet key start !!!");
             fclose(f);
             report_ui_walletinit_event(en_event_write_dnet_file_error,NULL);
             return 5;
@@ -420,6 +432,7 @@ int dnet_crypt_init(const char *version) {
 
     //add trust hosts
     if (!(host = dnet_add_host(&g_dnet_keys->pub, 0, 127 << 24 | 1, 0, DNET_ROUTE_LOCAL))) {
+        xdag_app_debug("dnet crypt add trust host failed !!!");
         report_ui_walletinit_event(en_event_add_trust_host_error,NULL);
         return 6;
     }
@@ -431,6 +444,7 @@ int dnet_crypt_init(const char *version) {
 
     int res = -dnet_test_keys();
     if(res){
+        xdag_app_debug("dnet crypt test keys failed !!!");
         report_ui_walletinit_event(en_event_pwd_error,NULL);
     }
 

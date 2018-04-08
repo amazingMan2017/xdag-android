@@ -1,6 +1,10 @@
 #ifndef _SYSTEM_H
 #define _SYSTEM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <xdaglib/dus/dfsrsa.h>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -8,10 +12,6 @@
 #include <Windows.h>
 #define inline              __inline
 #include "../dus/dfsrsa.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #define strtok_r            strtok_s
 #define localtime_r(a, b)   localtime_s(b, a)
@@ -37,7 +37,7 @@ extern "C" {
 #if defined(ANDROID) || defined(__ANDROID__)
 
 #define pthread_cancel(t) { t = -1;}
-#define pthread_iscancel(t) if(t == -1) pthread_exit(NULL);
+#define pthread_iscancel(t) if(t == -1) {pthread_exit(NULL);}
 #define PTHREAD_CANCEL_ENABLE 0
 #define PTHREAD_CANCEL_DEFERRED 0
 #define pthread_setcancelstate(type,oldstate)

@@ -10,7 +10,11 @@
 #include "xdagmain.h"
 #include "transport.h"
 
+#if defined(ANDROID) || defined(__ANDROID__)
+#define WALLET_FILE "/storage/sdcard0/xdag/wallet.dat"
+#else
 #define WALLET_FILE "wallet.dat"
+#endif
 
 struct key_internal {
 	xdag_hash_t pub, priv;

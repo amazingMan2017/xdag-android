@@ -426,52 +426,52 @@ int xdag_main(const char *pool_arg)
     memset(&g_xdag_stats, 0, sizeof(g_xdag_stats));
     memset(&g_xdag_extstats, 0, sizeof(g_xdag_extstats));
 
-    xdag_app_mess("Starting %s, version %s", g_progname, XDAG_VERSION);
-	
-    xdag_app_mess("Starting synchonization engine...");
+    xdag_app_debug("Starting %s, version %s", g_progname, XDAG_VERSION);
+
+    xdag_app_debug("Starting synchonization engine...");
     if (xdag_sync_init()){
         xdag_app_err(" xdag sync init error ");
         return -1;
     }
-	
-    xdag_app_mess("Starting dnet transport...");
-    xdag_app_mess("Transport module: ");
+
+    xdag_app_debug("Starting dnet transport...");
+    xdag_app_debug("Transport module: ");
     if (xdag_transport_start(transport_flags, bindto, n_addrports, addrports)){
         xdag_app_err(" xdag transport start error ");
         return -1;
     }
-	
-    xdag_app_mess("Initializing log system...");
+
+    xdag_app_debug("Initializing log system...");
     if (xdag_signal_init()){
         xdag_app_err(" xdag signal init error ");
         return -1;
     }
-	
-    xdag_app_mess("Initializing cryptography...");
+
+    xdag_app_debug("Initializing cryptography...");
     if (xdag_crypt_init(1)){
         xdag_app_err(" xdag signal init error ");
         return -1;
     }
-	
-    xdag_app_mess("Reading wallet...");
+
+    xdag_app_debug("Reading wallet...");
     if (xdag_wallet_init()){
         xdag_app_err(" xdag wallet init error ");
         return -1;
     }
-	
-    xdag_app_mess("Initializing addresses...");
+
+    xdag_app_debug("Initializing addresses...");
     if (xdag_address_init()){
         xdag_app_err(" xdag address init error ");
         return -1;
     }
-	
-    xdag_app_mess("Starting blocks engine...");
+
+    xdag_app_debug("Starting blocks engine...");
     if (start_regular_block_thread(0,-1)){
         xdag_app_err(" xdag start regular block thread error ");
         return -1;
     }
-	
-    xdag_app_mess("Starting pool engine...");
+
+    xdag_app_debug("Starting pool engine...");
     if (xdag_start_wallet_mainthread(pool_arg)){
         xdag_app_err(" xdag start wallet main thread error ");
         return -1;

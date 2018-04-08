@@ -9,6 +9,8 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <xdaglib/client/log.h>
+
 #endif
 #include "dnet_crypt.h"
 #include "dnet_database.h"
@@ -34,14 +36,15 @@ int dnet_init() {
     int i = 0, err = 0, res;
     const char *mess = 0;
 
+    xdag_app_debug("dnet init start");
     if (system_init() || dnet_threads_init() || dnet_hosts_init()) {
-        err = 4;
-        printf("initializing error\n");
+        xdag_app_err("dnet init error \n");
         return err;
     }
 
+    xdag_app_debug("dnet crypt init start");
     if ((err = dnet_crypt_init(DNET_VERSION))) {
-        //sleep(3);
+        xdag_app_err("dnet crypto init error\n");
         return err;
     }
 

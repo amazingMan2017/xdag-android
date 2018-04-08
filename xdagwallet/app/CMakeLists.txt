@@ -610,5 +610,5 @@ add_library(xdag SHARED ${XDAG_SRC_FILES})
 #generate libraries
 target_link_libraries(crypto -ldl -lz)
 target_link_libraries(ssl crypto)
-target_link_libraries(xdag ssl crypto)
+target_link_libraries(xdag ssl crypto -llog)
 

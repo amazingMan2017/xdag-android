@@ -13,6 +13,7 @@
 #include "pool.h"
 #include "version.h"
 #include "../dnet/dnet_main.h"
+#include "log.h"
 
 #define NEW_BLOCK_TTL   5
 #define REQUEST_WAIT    64
@@ -262,7 +263,10 @@ int xdag_transport_start(int flags, const char *bindto, int npairs, const char *
 	dnet_connection_close_notify = &conn_close_notify;
 	
 	connections = (void**)malloc(N_CONNS * sizeof(void *));
-	if (!connections) return -1;
+	if (!connections) {
+		xdag_app_err("transport malloc connections failed");
+		return -1;
+	}
 	
 	res = dnet_init();
 	if (!res) {
