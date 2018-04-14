@@ -1,12 +1,13 @@
 package com.xdag.wallet;
 
 import android.Manifest;
-import android.app.Activity;
-import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,6 +21,7 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,9 +36,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button btnConncet;
     private Button btnDisConnect;
     private Button btnXfer;
-    private Thread xdagProcessThread;
+    private HandlerThread xdagProcessThread;
+    private Handler xdagMessageHandler;
+
     private static final String TAG = "XdagWallet";
     private static final int PERMISSION_REQUESTCODE = 1;
+
+    private static final int MSG_CONNECT_TO_POOL = 1;
+    private static final int MSG_DISCONNECT_FROM_POOL = 2;
+    private static final int MSG_XFER_XDAG_COIN = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         initView();
         initData();
         initPermission();
+        initXdagFiles();
     }
 
     private void initView() {
@@ -67,25 +76,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void initData(){
         EventBus.getDefault().register(this);
 
-//        xdagProcessThread = new Thread(new Runnable() {
-//            int runTimes = 0;
-//            @Override
-//            public void run() {
-//                while(runTimes < 10){
-//                    Log.d(TAG," send Msg to UI in Thread " + Thread.currentThread().getId());
-//                    MessageEvent event = new MessageEvent();
-//                    event.account = "xxxx";
-//                    event.msgNo = runTimes ++;
-//                    EventBus.getDefault().post(event);
-//                    try {
-//                        Thread.sleep(1000);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//            }
-//        });
-//        xdagProcessThread.start();
+        xdagProcessThread = new HandlerThread("XdagProcessThread");
+        xdagProcessThread.start();
+
+        xdagMessageHandler = new Handler(xdagProcessThread.getLooper()){
+            @Override
+            public void handleMessage(Message msg) {
+                switch (msg.arg1){
+                    case MSG_CONNECT_TO_POOL:
+                    {
+                        Bundle data = msg.getData();
+                        String poolAddr = data.getString("pool");
+                        XdagWrapper xdagWrapper = XdagWrapper.getInstance();
+                        xdagWrapper.XdagConnectToPool(poolAddr);
+                    }
+                    break;
+                    case MSG_DISCONNECT_FROM_POOL:
+                    {
+
+                    }
+                    break;
+                    case MSG_XFER_XDAG_COIN:
+                    {
+
+                    }
+                    break;
+                    default:
+                    {
+                        Log.e(TAG,"unkown command from ui");
+                    }
+                    break;
+                }
+            }
+        };
     }
 
     private void initPermission() {
@@ -98,6 +121,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
             permissionLists.add(Manifest.permission.READ_EXTERNAL_STORAGE);
         }
+
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED){
+            permissionLists.add(Manifest.permission.ACCESS_NETWORK_STATE);
+        }
+
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_WIFI_STATE) != PackageManager.PERMISSION_GRANTED){
+            permissionLists.add(Manifest.permission.ACCESS_WIFI_STATE);
+        }
+
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED){
             permissionLists.add(Manifest.permission.INTERNET);
         }
@@ -110,6 +142,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             ActivityCompat.requestPermissions(this, permissionLists.toArray(new String[permissionLists.size()]), PERMISSION_REQUESTCODE);
         }else{
             Toast.makeText(this, "all permission is allowed", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void initXdagFiles() {
+
+        String xdagFolderPath = "/sdcard/xdag";
+
+        File file = new File(xdagFolderPath);
+        if(!file.exists()){
+            file.mkdirs();
         }
     }
 
@@ -131,13 +173,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void onBtnConnectClicked() {
         String poolAddr = txtPool.getText().toString();
-        XdagWrapper xdagWrapper = XdagWrapper.getInstance();
-        xdagWrapper.XdagConnectToPool(poolAddr);
+        Message msg = Message.obtain();
+        Bundle data = new Bundle();
+        data.putString("pool",poolAddr);
+        msg.arg1 = MSG_CONNECT_TO_POOL;
+        msg.setData(data);
+        xdagMessageHandler.sendMessage(msg);
     }
 
     private void onBtnDisConnectClicked() {
         XdagWrapper xdagWrapper = XdagWrapper.getInstance();
         xdagWrapper.XdagDisConnectFromPool();
+
     }
 
     private void onBtnXferConnectClicked() {
@@ -148,7 +195,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public void ProcessXdagEvent(MessageEvent event) {
+    public void ProcessXdagEvent(XdagEvent event) {
         Log.d(TAG,"process msg in Thread " + Thread.currentThread().getId());
         Log.d(TAG,"event msgNo is " + event.msgNo);
         Log.d(TAG,"event account is " + event.account);

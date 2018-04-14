@@ -349,6 +349,7 @@ static void *miner_net_thread(void *arg)
     setsockopt(g_socket, SOL_SOCKET, SO_REUSEADDR, (char*)&reuseaddr, sizeof(int));
 
     // Now, connect to a pool
+    xdag_app_debug(" trying connected to the pool %s",str);
     res = connect(g_socket, (struct sockaddr*)&peeraddr, sizeof(peeraddr));
     if (res) {
         pthread_mutex_unlock(&g_pool_mutex);
@@ -356,6 +357,7 @@ static void *miner_net_thread(void *arg)
         report_ui_pool_event(en_event_cannot_connect_to_pool,mess);
         pthread_exit((void*)NULL);
     }
+    xdag_app_debug("already connected to the pool %s",str);
 
     if (send_to_pool(b.field, XDAG_BLOCK_FIELDS) < 0) {
         mess = "socket is closed";
@@ -441,7 +443,7 @@ static void *miner_net_thread(void *arg)
                     g_xdag_pool_ntask = ntask;
                     t00 = time(0);
 
-                    xdag_info("Task  : t=%llx N=%llu", task->main_time << 16 | 0xffff, ntask);
+                    xdag_app_debug("Task  : t=%llx N=%llu", task->main_time << 16 | 0xffff, ntask);
 
                     ndata = 0;
                     maxndata = sizeof(struct xdag_field);
@@ -459,7 +461,7 @@ static void *miner_net_thread(void *arg)
             t0 = time(0);
             res = send_to_pool(&task->lastfield, 1);
 
-            xdag_info("Share : %016llx%016llx%016llx%016llx t=%llx res=%d",
+            xdag_app_debug("Share : %016llx%016llx%016llx%016llx t=%llx res=%d",
                                        h[3], h[2], h[1], h[0], task->main_time << 16 | 0xffff, res);
 
             if (res) {

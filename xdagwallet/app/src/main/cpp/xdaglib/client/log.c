@@ -98,6 +98,8 @@ char* app_level_str(en_xdag_app_log_level level){
     switch (level) {
         case en_xdag_no_error:
             return "noerror";
+        case en_xdag_fatal:
+            return "fatal";
         case en_xdag_critical:
             return "critical";
         case en_xdag_internal:
@@ -134,12 +136,14 @@ void xdag_app_log(en_xdag_app_log_level level,const char* file,int line,const ch
     if(app_log_level > level)
         return;
 
-    //get time in tbuf
+    //get time in tbuf time and log level is unnecessary for android
+	//since android's log utils already printed them
+#if !defined(ANDROID) || !defined(__ANDROID__)
     gettimeofday(&tv, 0);
     t = tv.tv_sec;
     localtime_r(&t, &tm);
     strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S", &tm);
-
+#endif
     //printf level, file, line ,time,threadid
     pthread_mutex_lock(&app_log_mutex);
 
@@ -154,8 +158,13 @@ void xdag_app_log(en_xdag_app_log_level level,const char* file,int line,const ch
         level == en_xdag_error||
         level == en_xdag_critical ||
         level == en_xdag_fatal){
+
+#if !defined(ANDROID) || !defined(__ANDROID__)
         pos += sprintf(event.app_log_msg,"[%s][%s][%s][%d][%lu]",
                        app_level_str(level),tbuf,filename(file),line,pthread_self());
+#else
+		pos += sprintf(event.app_log_msg,"[%s][%d][%lu]",filename(file),line,pthread_self());
+#endif
     }
 
     //printf log msg

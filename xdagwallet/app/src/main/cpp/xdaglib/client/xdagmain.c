@@ -509,7 +509,7 @@ void xdag_show_state(xdag_hash_t hash)
 
     strcpy(state, get_state());
 
-    xdag_app_debug(" get hash address %s ",address);
+    //xdag_app_debug(" get hash address %s ",address);
 
     st_xdag_event event;
     memset(&event,0,sizeof(st_xdag_event));
@@ -523,7 +523,7 @@ void xdag_show_state(xdag_hash_t hash)
     strcpy(event.balance,balance);
     strcpy(event.state,state);
 
-    xdag_app_debug(" update ui address %s balance %s state %s ",event.address,event.balance,event.state);
+    //xdag_app_debug(" update ui address %s balance %s state %s ",event.address,event.balance,event.state);
 
     g_app_callback_func(g_callback_object,&event);
 }

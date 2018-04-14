@@ -49,7 +49,7 @@ public class XdagWrapper {
     private native int XdagXfer(String address,String amount);
 
 
-    public void updateUi(MessageEvent event){
+    public void updateUi(XdagEvent event){
 
     }
 }
