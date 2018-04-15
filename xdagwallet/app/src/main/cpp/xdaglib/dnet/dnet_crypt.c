@@ -335,6 +335,7 @@ int dnet_crypt_init(const char *version) {
 
                     res = (*g_input_password)("Password", pwd, 256);
                     if(res == -1){
+                        xdag_app_debug("dnet crypt user cancel password type in");
                         fclose(f);
                         return -1;
                     }
@@ -371,7 +372,7 @@ int dnet_crypt_init(const char *version) {
 
         res = (*g_input_password)("Set password", pwd, 256);
         if(res == -1){
-            xdag_app_debug("user cancel password type in");
+            xdag_app_debug("dnet crypt set passwd user cancel password type in");
             fclose(f);
             return -1;
         }
@@ -380,7 +381,7 @@ int dnet_crypt_init(const char *version) {
         res = (*g_input_password)("Re-type password", pwd1, 256);
         if(res == -1){
             fclose(f);
-            xdag_app_debug("user cancel password re-type in");
+            xdag_app_debug("dnet crypt re-type passwd user cancel password re-type in");
             return -1;
         }
         dfslib_utf8_string(&str1, pwd1, strlen(pwd1));
@@ -394,7 +395,7 @@ int dnet_crypt_init(const char *version) {
         res = (*g_input_password)("Type random keys", buf, 256);
         if(res == -1){
             fclose(f);
-            xdag_app_debug("user cancel random type in");
+            xdag_app_debug("dnet crypt set random user cancel random type in");
             return -1;
         }
 

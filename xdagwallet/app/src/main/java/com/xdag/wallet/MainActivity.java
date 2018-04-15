@@ -25,7 +25,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+public class MainActivity extends AppCompatActivity implements View.OnClickListener,AuthDialogFragment.Callback{
 
     private EditText txtPool;
     private TextView tvBalance;
@@ -207,5 +207,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             EventBus.getDefault().unregister(this);
         }
         super.onDestroy();
+    }
+
+    public void showViewDialogFragment(View view) {
+        AuthDialogFragment viewDialogFragment = new AuthDialogFragment();
+        viewDialogFragment.show(getFragmentManager());
+    }
+
+    @Override
+    public void onClick(String authInfo) {
+        Log.i(TAG,"authInfo is " + authInfo);
     }
 }

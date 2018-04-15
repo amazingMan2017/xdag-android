@@ -52,4 +52,8 @@ public class XdagWrapper {
     public void updateUi(XdagEvent event){
 
     }
+
+    public static void nativeCallbackFunc(XdagEvent event){
+
+    }
 }
