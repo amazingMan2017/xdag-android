@@ -28,6 +28,8 @@ static jmethodID gProcessNativeMethod = NULL;
 
 pthread_mutex_t g_process_mutex;
 
+void invokeJavaCallBack(st_xdag_event *event);
+
 extern "C"
 JNIEXPORT jint JNICALL  JNI_OnLoad(JavaVM *ajvm, void *reserved)
 {
@@ -101,8 +103,74 @@ st_xdag_app_msg* XdagWalletProcessCallback(const void *call_back_object, st_xdag
             LOGI("xdag request user type in password");
 
         }
+        default:
+            invokeJavaCallBack(event);
+            break;
     }
     return NULL;
+}
+
+void invokeJavaCallBack(st_xdag_event *event) {
+    bool isAttacked = false;
+    JNIEnv *currentEnv;
+
+    int status =gJvm->GetEnv((void **) &currentEnv, JNI_VERSION_1_4);
+    if(status < 0){
+        status = gJvm->AttachCurrentThread(&currentEnv, NULL);
+
+        if(status < 0) {
+            LOGI("event_callback_func: failed to attach current thread");
+            return;
+        }
+        isAttacked = true;
+    }
+
+    if(NULL == gclazzXdagEvent || NULL == gclazzXdagWrapper){
+        LOGI(" class %s and %s has not mapped yet",gclazzXdagEvent,gclazzXdagWrapper);
+        gJvm->DetachCurrentThread();
+        return;
+    }
+
+    /**
+     * 找到EventInfo的构造方法，并实例化对象
+     * */
+    if(NULL == gNewXdagEventMethod){
+        LOGI(" can not find construct function of EventInfo ");
+        gJvm->DetachCurrentThread();
+        return;
+    }
+
+    /**
+     * 将C++当中的类类型转成java当中引用的类型,int类型是基本类型，不用转换
+     * */
+    jint jmsgNo = event->msgNo;
+
+    jstring jmsgData = currentEnv->NewStringUTF(eventInfo->msgData.c_str());
+    jobject jeventInfo = currentEnv->NewObject(gclazzXdagEvent,gNewXdagEventMethod,jmsgNo,jmsgData);
+    if(NULL == jeventInfo){
+        LOGI(" can construct object of EventInfo ");
+        gJvm->DetachCurrentThread();
+        return;
+    }
+
+    /**
+     * 回调java当中的方法，把对象当做参数进行传递
+     * */
+    if(NULL == gProcessNativeMethod){
+        LOGI("can not find callback function of JNIProcessor");
+        gJvm->DetachCurrentThread();
+        return;
+    }
+
+    currentEnv->CallStaticVoidMethod(gclazzXdagWrapper,gProcessNativeMethod,jeventInfo);
+
+//error:
+    /**
+     * 回调完成后一定要释放JNI环境
+     * */
+    if(isAttacked){
+        gJvm->DetachCurrentThread();
+    }
 }
 
 extern "C"
