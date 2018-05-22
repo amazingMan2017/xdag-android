@@ -7,6 +7,7 @@
 #include <termios.h>
 #include <errno.h>
 #include <xdaglib/client/log.h>
+#include <xdaglib/wrapper/xdagwrapper.h>
 #include "system.h"
 #include "../dus/dfslib_random.h"
 #include "../dus/dfslib_crypt.h"
@@ -85,8 +86,9 @@ static int input_password(const char *prompt, char *buf, unsigned len) {
     }
 
     st_xdag_app_msg *msg = g_app_callback_func(g_callback_object,&event);
-
+    xdag_app_info("receive message from ui eventtype 0x%x  msg address %p",event.event_type,msg);
     if(!msg){
+        xdag_app_info("error ui pass empty auth info ");
         return -1;
     }
 
@@ -98,21 +100,29 @@ static int input_password(const char *prompt, char *buf, unsigned len) {
             break;
         case en_event_set_pwd:
             if(msg->xdag_pwd){
+                xdag_app_info(" set password from ui %s ",msg->xdag_pwd);
                 strcpy(buf,msg->xdag_pwd);
             }
             break;
         case en_event_retype_pwd:
+            xdag_app_info("user retype password ");
             if(msg->xdag_retype_pwd){
+                xdag_app_info(" retype password from ui %s ",msg->xdag_retype_pwd);
                 strcpy(buf,msg->xdag_retype_pwd);
             }
             break;
         case en_event_set_rdm:
             if(msg->xdag_rdm){
+                xdag_app_info(" set random keys from ui %s ",msg->xdag_rdm);
                 strcpy(buf,msg->xdag_rdm);
             }
             break;
         default:
-            break;
+            {
+                //event can not processed
+                xdag_app_err(" can not process event type  0x%x",event.event_type);
+            }
+            return -1;
     }
 
     //fgets(buf, len, stdin);
@@ -127,7 +137,7 @@ static int input_password(const char *prompt, char *buf, unsigned len) {
         buf[len - 1] = 0;
 
     //free msg
-    xdag_free_app_msg(msg);
+    //xdag_free_app_msg(msg);
 
 	return 0;
 }
@@ -371,6 +381,7 @@ int dnet_crypt_init(const char *version) {
         memset(buf, 0, 256);
 
         res = (*g_input_password)("Set password", pwd, 256);
+        xdag_app_info("dnet crypt set passwd %s",pwd);
         if(res == -1){
             xdag_app_debug("dnet crypt set passwd user cancel password type in");
             fclose(f);
@@ -379,6 +390,7 @@ int dnet_crypt_init(const char *version) {
 
         dfslib_utf8_string(&str, pwd, strlen(pwd));
         res = (*g_input_password)("Re-type password", pwd1, 256);
+        xdag_app_info("dnet crypt re-type passwd %s",pwd1);
         if(res == -1){
             fclose(f);
             xdag_app_debug("dnet crypt re-type passwd user cancel password re-type in");

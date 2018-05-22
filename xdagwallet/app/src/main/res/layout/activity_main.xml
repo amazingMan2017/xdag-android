@@ -26,7 +26,7 @@
             android:layout_width="180dp"
             android:layout_height="40dp"
             android:gravity="center"
-            android:text="cn.xdag.top:8899"
+            android:text="xdagmine.com:13654"
             android:textAppearance="@android:style/TextAppearance.Holo.Small"
             />
 

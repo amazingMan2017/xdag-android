@@ -198,9 +198,70 @@ int xdag_set_app_log_level(en_xdag_app_log_level level)
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
-//#include <execinfo.h>
 #include <ucontext.h>
+#if defined(ANDROID) || defined(__ANDROID__)
+#include <unwind.h>
+#include <dlfcn.h>
 
+typedef struct tag_BacktraceState
+{
+	void** current;
+	void** end;
+} BacktraceState;
+
+static _Unwind_Reason_Code unwindCallback(struct _Unwind_Context* context, void* arg)
+{
+	BacktraceState* state = (BacktraceState*)(arg);
+	uintptr_t pc = _Unwind_GetIP(context);
+	if (pc) {
+		if (state->current == state->end) {
+			return _URC_END_OF_STACK;
+		} else {
+			*state->current++ = (void*)(pc);
+		}
+	}
+	return _URC_NO_REASON;
+}
+
+size_t captureBacktrace(void** buffer, size_t max)
+{
+	BacktraceState state = {buffer, buffer + max};
+	_Unwind_Backtrace(unwindCallback, &state);
+
+	return state.current - buffer;
+}
+
+void dumpBacktrace(char* backtrace_buff,void** buffer, size_t count)
+{
+	memset(backtrace_buff,0,8192);
+	for (size_t idx = 0; idx < count; ++idx) {
+		const void* addr = buffer[idx];
+		const char* symbol = "";
+
+		Dl_info info;
+		if (dladdr(addr, &info) && info.dli_sname) {
+			symbol = info.dli_sname;
+			xdag_app_debug("symbol %u backtrace is %s",idx,symbol);
+		}
+		//os << "  #" << std::setw(2) << idx << ": " << addr << "  " << symbol << "\n";
+		sprintf(backtrace_buff," #%u: %p %s",idx,addr,symbol);
+	}
+}
+
+void backtraceToLogcat()
+{
+	const size_t max = 30;
+	char  backtrace_buff[8192];
+	void* buffer[max];
+
+	xdag_app_debug("start recording backtrace");
+
+	dumpBacktrace(backtrace_buff, buffer, captureBacktrace(buffer, max));
+
+	xdag_app_debug("app_name", "%s",backtrace_buff);
+}
+
+#endif
 #define REG_(name) sprintf(buf + strlen(buf), #name "=%llx, ", (unsigned long long)uc->uc_mcontext.gregs[REG_ ## name])
 
 static void sigCatch(int signum, siginfo_t *info, void *context)
@@ -209,7 +270,7 @@ static void sigCatch(int signum, siginfo_t *info, void *context)
 	int frames, i;
 	char **strs;
 
-	xdag_app_fatal("Signal %d delivered", signum);
+	xdag_app_debug("Signal %d delivered", signum);
 #ifdef __x86_64__
 	{
 		static char buf[0x100]; *buf = 0;
@@ -222,15 +283,15 @@ static void sigCatch(int signum, siginfo_t *info, void *context)
 		xdag_fatal("%s", buf);
 	}
 #endif
-	//frames = backtrace(callstack, 100);
-	//strs = backtrace_symbols(callstack, frames);
 
-	for (i = 0; i < frames; ++i) {
-        xdag_app_fatal("%s", strs[i]);
-	}
-	signal(signum, SIG_DFL);
-	kill(getpid(), signum);
-	exit(-1);
+//#if defined(ANDROID) || defined(__ANDROID__)
+	backtraceToLogcat();
+//#endif
+
+	//xdag_app_debug("signal SIG_DFL %u to process %d",SIG_DFL,getpid());
+	//signal(signum, SIG_DFL);
+	//kill(getpid(), signum);
+	//exit(-1);
 }
 
 int xdag_signal_init(void)

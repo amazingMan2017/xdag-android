@@ -1,14 +1,14 @@
 package com.xdag.wallet;
 
-/**
- * Created by Bill on 2018/4/4.
- */
+import android.util.Log;
+
+import org.greenrobot.eventbus.EventBus;
 
 public class XdagWrapper {
     static {
         System.loadLibrary("xdag");
     }
-
+    private static final String TAG= "XdagWallet";
     private static XdagWrapper instance = null;
     private XdagWrapper(){}
     public static XdagWrapper getInstance() {
@@ -42,11 +42,14 @@ public class XdagWrapper {
         return XdagUnInit();
     }
 
+    public int XdagNotifyMsg(XdagUiNotifyMsg msg){return XdagNotifyNativeMsg(msg);}
+
     private native int XdagInit();
     private native int XdagUnInit();
     private native int XdagConnect(String poolAddr);
     private native int XdagDisConnect();
     private native int XdagXfer(String address,String amount);
+    private native int XdagNotifyNativeMsg(XdagUiNotifyMsg msg);
 
 
     public void updateUi(XdagEvent event){
@@ -54,6 +57,8 @@ public class XdagWrapper {
     }
 
     public static void nativeCallbackFunc(XdagEvent event){
-
+        Log.i(TAG," receive event event type " + event.eventType + " balance " + event.balance
+                        + " thread id " + Thread.currentThread().getId());
+        EventBus.getDefault().post(event);
     }
 }

@@ -88,7 +88,8 @@ static uint64_t get_timestamp(void)
 {
 	struct timeval tp;
 	gettimeofday(&tp, 0);
-	return (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
+	uint64_t res = (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
+	return res;
 }
 
 // returns a time period index, where a period is 64 seconds long
@@ -1111,12 +1112,14 @@ begin:
  *   for the light node n_mining_threads < 0 and the number of threads is equal to ~n_mining_threads;
  * miner_address = 1 - the address of the miner is explicitly set
  */
-int start_regular_block_thread(int n_mining_threads, int miner_address)
+int xdag_blocks_start(int n_mining_threads, int miner_address)
 {
 	pthread_mutexattr_t attr;
     //pthread_t th;
 	int res;
-
+	if (g_xdag_testnet) {
+		xdag_era = XDAG_TEST_ERA;
+	}
 	//do nothing in windows ,memmap file in linux
 	/*
 	if (xdag_mem_init(g_light_mode && !miner_address ? 0 : (((get_timestamp() - XDAG_ERA) >> 10) + (uint64_t)365 * 24 * 60 * 60) * 2 * sizeof(struct block_internal))) {

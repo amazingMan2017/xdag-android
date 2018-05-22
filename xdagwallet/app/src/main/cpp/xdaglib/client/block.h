@@ -65,7 +65,7 @@ struct xdag_block {
 #define xdag_type(b, n) ((b)->field[0].type >> ((n) << 2) & 0xf)
 
 // start of regular block processing
-extern int start_regular_block_thread(int n_mining_threads, int miner_address);
+extern int xdag_blocks_start(int n_mining_threads, int miner_address);
 
 // checks and adds block to the storage. Returns non-zero value in case of error.
 extern int xdag_add_block(struct xdag_block *b);

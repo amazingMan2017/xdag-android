@@ -396,6 +396,7 @@ void xdag_global_init(){
     g_is_miner = 1;
     g_is_pool = 0;
     g_xdag_state = XDAG_STATE_INIT;
+    g_xdag_testnet = 0;
 }
 
 int xdag_main(const char *pool_arg)
@@ -466,7 +467,7 @@ int xdag_main(const char *pool_arg)
     }
 
     xdag_app_debug("Starting blocks engine...");
-    if (start_regular_block_thread(0,-1)){
+    if (xdag_blocks_start(0, -1)){
         xdag_app_err(" xdag start regular block thread error ");
         return -1;
     }
@@ -494,6 +495,7 @@ void xdag_show_state(xdag_hash_t hash)
         return;
 
     if (g_xdag_state < XDAG_STATE_XFER){
+        xdag_app_debug("balance not ready g_xdag_state %d ",g_xdag_state);
         balance_state = en_balance_not_ready;
         strcpy(balance, "Not ready");
     }else{
@@ -509,7 +511,7 @@ void xdag_show_state(xdag_hash_t hash)
 
     strcpy(state, get_state());
 
-    //xdag_app_debug(" get hash address %s ",address);
+    xdag_app_debug(" get hash address %s ",address);
 
     st_xdag_event event;
     memset(&event,0,sizeof(st_xdag_event));
@@ -523,7 +525,7 @@ void xdag_show_state(xdag_hash_t hash)
     strcpy(event.balance,balance);
     strcpy(event.state,state);
 
-    //xdag_app_debug(" update ui address %s balance %s state %s ",event.address,event.balance,event.state);
+    xdag_app_debug(" update ui address %s balance %s state %s ",event.address,event.balance,event.state);
 
     g_app_callback_func(g_callback_object,&event);
 }

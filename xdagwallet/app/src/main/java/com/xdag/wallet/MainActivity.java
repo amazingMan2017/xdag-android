@@ -25,7 +25,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener,AuthDialogFragment.Callback{
+public class MainActivity extends AppCompatActivity implements View.OnClickListener,AuthDialogFragment.AuthInputListener{
 
     private EditText txtPool;
     private TextView tvBalance;
@@ -85,6 +85,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 switch (msg.arg1){
                     case MSG_CONNECT_TO_POOL:
                     {
+                        Log.i(TAG,"receive msg connect to the pool thread id " + Thread.currentThread().getId());
                         Bundle data = msg.getData();
                         String poolAddr = data.getString("pool");
                         XdagWrapper xdagWrapper = XdagWrapper.getInstance();
@@ -196,9 +197,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void ProcessXdagEvent(XdagEvent event) {
-        Log.d(TAG,"process msg in Thread " + Thread.currentThread().getId());
-        Log.d(TAG,"event msgNo is " + event.msgNo);
-        Log.d(TAG,"event account is " + event.account);
+        Log.i(TAG,"process msg in Thread " + Thread.currentThread().getId());
+        Log.i(TAG,"event event type is " + event.eventType);
+        Log.i(TAG,"event account is " + event.address);
+        Log.i(TAG,"event balace is " + event.balance);
+        //show dialog and ask user to type in password
+        switch (event.eventType){
+            case XdagEvent.en_event_set_pwd:
+            case XdagEvent.en_event_type_pwd:
+            case XdagEvent.en_event_retype_pwd:
+            case XdagEvent.en_event_set_rdm:
+            {
+                AuthDialogFragment authDialogFragment = new AuthDialogFragment();
+                authDialogFragment.setAuthEventType(event.eventType);
+                authDialogFragment.setAuthHintInfo(GetAuthHintString(event.eventType));
+                authDialogFragment.show(getFragmentManager(), "Auth Dialog");
+            }
+            break;
+        }
+    }
+
+    private String GetAuthHintString(final int eventType){
+        switch (eventType){
+            case XdagEvent.en_event_set_pwd:
+                return "set password";
+            case XdagEvent.en_event_type_pwd:
+                return "input password";
+            case XdagEvent.en_event_retype_pwd:
+                return "retype password";
+            case XdagEvent.en_event_set_rdm:
+                return "set random keys";
+            default:
+                return "input password";
+        }
     }
 
     @Override
@@ -209,13 +240,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onDestroy();
     }
 
-    public void showViewDialogFragment(View view) {
-        AuthDialogFragment viewDialogFragment = new AuthDialogFragment();
-        viewDialogFragment.show(getFragmentManager());
-    }
-
     @Override
-    public void onClick(String authInfo) {
-        Log.i(TAG,"authInfo is " + authInfo);
+    public void onAuthInputComplete(XdagUiNotifyMsg msg) {
+        //notify native thread
+        XdagWrapper xdagWrapper = XdagWrapper.getInstance();
+        xdagWrapper.XdagNotifyMsg(msg);
     }
 }

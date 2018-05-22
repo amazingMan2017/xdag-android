@@ -2,10 +2,27 @@
 #include <pthread.h>
 #include <android/log.h>
 #include <string>
+#include <map>
+#include <iterator>
 #include <xdaglib/client/xdagmain.h>
 #include <xdaglib/wrapper/xdagwrapper.h>
 #include "xdaglib/wrapper/xdagwrapper.h"
 
+typedef enum st_xdag_ui_msg{
+    ui_msg_set_password = 0x1001,
+    ui_msg_type_password = 0x1002,
+    ui_msg_retype_password = 0x1003,
+    ui_msg_set_random_keys = 0x1004,
+    ui_msg_xfer_coin = 0x1005,
+};
+
+std::string gPassword;
+std::string gRetypePassword;
+std::string gRadomKeys;
+std::string gRecvAccount;
+double gSendAmount;
+
+#define CLAZZ_XDAG_UINOTIFYMSG "com/xdag/wallet/XdagUiNotifyMsg"
 #define CLAZZ_XDAG_EVENT "com/xdag/wallet/XdagEvent"
 #define CLAZZ_XDAG_WRAPPER "com/xdag/wallet/XdagWrapper"
 
@@ -17,10 +34,15 @@ _JavaVM *gJvm;
 /**
  * mapping class of java layer
  * */
+static jclass gclazzXdagUiNotifyMsg = NULL;
 static jclass gclazzXdagEvent = NULL;
 static jclass gclazzXdagWrapper = NULL;
 static jmethodID gNewXdagEventMethod = NULL;
 static jmethodID gProcessNativeMethod = NULL;
+
+static std::map<std::string,std::string> gAuthInfoMap;
+static pthread_cond_t gWaitUiCond;
+static pthread_mutex_t gWaitUiMutex;
 
 #ifndef LOGI(x...)
 #endif
@@ -51,6 +73,13 @@ JNIEXPORT jint JNICALL  JNI_OnLoad(JavaVM *ajvm, void *reserved)
     /**
      * mapping java class to c++ class
      * */
+    tmpClazz = currentEnv->FindClass(CLAZZ_XDAG_UINOTIFYMSG);
+    if(tmpClazz == NULL){
+        LOGI(" can not find class  %s" ,CLAZZ_XDAG_UINOTIFYMSG);
+        return result;
+    }
+    gclazzXdagUiNotifyMsg = (jclass)currentEnv->NewGlobalRef(tmpClazz);
+
     tmpClazz = currentEnv->FindClass(CLAZZ_XDAG_EVENT);
     if(tmpClazz == NULL){
         LOGI(" can not find class  %s" ,CLAZZ_XDAG_EVENT);
@@ -65,7 +94,7 @@ JNIEXPORT jint JNICALL  JNI_OnLoad(JavaVM *ajvm, void *reserved)
     }
     gclazzXdagWrapper = (jclass)currentEnv->NewGlobalRef(tmpClazz);
 
-    tmpMethodID = currentEnv->GetMethodID(gclazzXdagEvent,"<init>","(ILjava/lang/String;)V");
+    tmpMethodID = currentEnv->GetMethodID(gclazzXdagEvent,"<init>","(IIIIIILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V");
     if(tmpMethodID == NULL){
         LOGI(" can not find method id EventInfo 111");
         return result;
@@ -79,32 +108,119 @@ JNIEXPORT jint JNICALL  JNI_OnLoad(JavaVM *ajvm, void *reserved)
     }
     gProcessNativeMethod = tmpMethodID;
 
+    pthread_cond_init(&gWaitUiCond,PTHREAD_COND_INITIALIZER);
+    pthread_mutex_init(&gWaitUiMutex,PTHREAD_MUTEX_INITIALIZER);
+    gAuthInfoMap.clear();
+
     return JNI_VERSION_1_4;
+}
+
+extern "C"
+JNIEXPORT jint JNICALL Java_com_xdag_wallet_XdagWrapper_XdagNotifyNativeMsg(
+        JNIEnv *env,
+        jobject *obj,
+        jobject jmsg){
+    pthread_mutex_lock(&gWaitUiMutex);
+    //put password into buffer
+    LOGI("signal message to native");
+
+    jfieldID msgTypeField = env->GetFieldID(gclazzXdagUiNotifyMsg, "msgType", "I");
+
+    jint jmsgType = env->GetIntField(jmsg,msgTypeField);
+    int msgType = (int)jmsgType;
+    LOGI("message type is 0x%x",msgType);
+
+    switch (msgType){
+        case ui_msg_set_password:
+        case ui_msg_type_password:
+        {
+            LOGI("user type password from ui %s",gPassword.c_str());
+            jfieldID pwdField = env->GetFieldID(gclazzXdagUiNotifyMsg, "pwd", "Ljava/lang/String;");
+            jstring jpwd = (jstring)env->GetObjectField(jmsg,pwdField);
+            gPassword = env->GetStringUTFChars(jpwd,NULL);
+        }
+        break;
+        case ui_msg_retype_password:
+        {
+            jfieldID retypePwdField = env->GetFieldID(gclazzXdagUiNotifyMsg, "retypePwd", "Ljava/lang/String;");
+            jstring jretypePwd = (jstring)env->GetObjectField(jmsg,retypePwdField);
+            gRetypePassword = env->GetStringUTFChars(jretypePwd,NULL);
+            LOGI("user re-type password from ui %s",gRetypePassword.c_str());
+        }
+        break;
+        case ui_msg_set_random_keys:
+        {
+            jfieldID rdmKeysField = env->GetFieldID(gclazzXdagUiNotifyMsg, "rdmKeys", "Ljava/lang/String;");
+            jstring jradomKeys = (jstring)env->GetObjectField(jmsg,rdmKeysField);
+            gRadomKeys = env->GetStringUTFChars(jradomKeys,NULL);
+            LOGI("user set random keys from ui %s",gRadomKeys.c_str());
+        }
+        break;
+        case ui_msg_xfer_coin:
+        {
+            jfieldID recvAccountField = env->GetFieldID(gclazzXdagUiNotifyMsg, "recvAccount", "Ljava/lang/String;");
+            jfieldID sendAmountField = env->GetFieldID(gclazzXdagUiNotifyMsg, "sendAmount", "D");
+            jstring jrecvAccount = (jstring)env->GetObjectField(jmsg,recvAccountField);
+            jdouble jsendAmount = (jdouble)env->GetDoubleField(jmsg,sendAmountField);
+            gRecvAccount = env->GetStringUTFChars(jrecvAccount,NULL);
+            gSendAmount = (double)jsendAmount;
+            LOGI("user send %lf xdag coints to %s",gSendAmount,gRecvAccount.c_str());
+        }
+        break;
+        default:
+        {
+            LOGI("receive ukown ui msg type : %0xx",msgType);
+            return -1;
+        }
+    }
+
+    pthread_cond_signal(&gWaitUiCond);
+    pthread_mutex_unlock(&gWaitUiMutex);
+
+    return 0;
 }
 
 st_xdag_app_msg* XdagWalletProcessCallback(const void *call_back_object, st_xdag_event* event){
 
     switch (event->event_type){
 
-        case en_event_type_pwd:
-        {
-            LOGI("request user type in password");
-        }
-        return NULL;
-
         case en_event_xdag_log_print:
         {
             LOGI("%s",event->app_log_msg);
         }
         return NULL;
-
         case en_event_set_pwd:
+        case en_event_retype_pwd:
+        case en_event_set_rdm:
+        case en_event_type_pwd:
         {
-            LOGI("xdag request user type in password");
-
-        }
-        default:
+            LOGI("reqeust user type auth info Msg Id : 0x%x",event->event_type);
+            pthread_mutex_lock(&gWaitUiMutex);
             invokeJavaCallBack(event);
+            pthread_cond_wait(&gWaitUiCond,&gWaitUiMutex);
+
+            st_xdag_app_msg* msg = NULL;
+            msg = (st_xdag_app_msg*)malloc(sizeof(st_xdag_app_msg));
+
+            if(event->event_type == en_event_set_pwd || event->event_type == en_event_type_pwd){
+                msg->xdag_pwd = strdup(gPassword.c_str());
+                LOGI("user typed password  %s",msg->xdag_pwd);
+            }
+            else if(event->event_type == en_event_retype_pwd ){
+                msg->xdag_retype_pwd = strdup(gRetypePassword.c_str());
+                LOGI("user re-typed password  info %s",msg->xdag_retype_pwd);
+            }
+            else if(event->event_type == en_event_set_rdm ){
+                msg->xdag_rdm = strdup(gRadomKeys.c_str());
+                LOGI("user typed random keys %s",msg->xdag_rdm);
+            }
+
+            pthread_mutex_unlock(&gWaitUiMutex);
+            return msg;
+        }
+        return NULL;
+
+        default:
             break;
     }
     return NULL;
@@ -113,6 +229,8 @@ st_xdag_app_msg* XdagWalletProcessCallback(const void *call_back_object, st_xdag
 void invokeJavaCallBack(st_xdag_event *event) {
     bool isAttacked = false;
     JNIEnv *currentEnv;
+
+    LOGI("invoke java callback start");
 
     int status =gJvm->GetEnv((void **) &currentEnv, JNI_VERSION_1_4);
     if(status < 0){
@@ -140,13 +258,35 @@ void invokeJavaCallBack(st_xdag_event *event) {
         return;
     }
 
-    /**
-     * 将C++当中的类类型转成java当中引用的类型,int类型是基本类型，不用转换
-     * */
-    jint jmsgNo = event->msgNo;
+    jint jprocedure_type = event->procedure_type;
+    jint jeventType = event->event_type;
+    jint jlogLevel = event->log_level;
+    jint jprogramState = event->xdag_program_state;
+    jint jaddressState = event->xdag_address_state;
+    jint jbalanceState = event->xdag_balance_state;
 
-    jstring jmsgData = currentEnv->NewStringUTF(eventInfo->msgData.c_str());
-    jobject jeventInfo = currentEnv->NewObject(gclazzXdagEvent,gNewXdagEventMethod,jmsgNo,jmsgData);
+    jstring jstate = currentEnv->NewStringUTF(event->state);
+    jstring jaddress = currentEnv->NewStringUTF(event->address);
+    jstring jbalance = currentEnv->NewStringUTF(event->balance);
+    jstring jerrorMsg = currentEnv->NewStringUTF(event->error_msg);
+    jstring jappLogMsg = currentEnv->NewStringUTF(event->app_log_msg);
+
+    LOGI("fill xdag event info complete");
+
+    jobject jeventInfo = currentEnv->NewObject(gclazzXdagEvent,gNewXdagEventMethod,
+                                               jprocedure_type,
+                                               jeventType,
+                                               jlogLevel,
+                                               jprogramState,
+                                               jaddressState,
+                                               jbalanceState,
+                                               jstate,
+                                               jaddress,
+                                               jbalance,
+                                               jerrorMsg,
+                                               jappLogMsg);
+    LOGI("create xdag event object complete");
+
     if(NULL == jeventInfo){
         LOGI(" can construct object of EventInfo ");
         gJvm->DetachCurrentThread();
@@ -161,9 +301,9 @@ void invokeJavaCallBack(st_xdag_event *event) {
         gJvm->DetachCurrentThread();
         return;
     }
-
+    LOGI("throw event to java layer start");
     currentEnv->CallStaticVoidMethod(gclazzXdagWrapper,gProcessNativeMethod,jeventInfo);
-
+    LOGI("throw event to java layer end");
 //error:
     /**
      * 回调完成后一定要释放JNI环境
@@ -213,7 +353,6 @@ JNIEXPORT jint JNICALL Java_com_xdag_wallet_XdagWrapper_XdagDisConnect(
 
     return 0;
 }
-
 
 extern "C"
 JNIEXPORT jint JNICALL Java_com_xdag_wallet_XdagWrapper_XdagXfer(
