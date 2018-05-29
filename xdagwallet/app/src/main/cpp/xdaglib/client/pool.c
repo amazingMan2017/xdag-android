@@ -122,11 +122,8 @@ static int send_to_pool(struct xdag_field *fld, int nfld)
 	struct miner *m = &g_local_miner;
 	int i, res, todo = nfld * sizeof(struct xdag_field), done = 0;
 
-    xdag_app_debug("send block to the pool try to send %d fields",nfld);
-
 	if (g_socket < 0) {
 		pthread_mutex_unlock(&g_pool_mutex);
-        xdag_app_debug(" g_socket < 0 ");
 		return -1;
 	}
 
@@ -174,8 +171,8 @@ static int send_to_pool(struct xdag_field *fld, int nfld)
 	pthread_mutex_unlock(&g_pool_mutex);
 	
 	if (nfld == XDAG_BLOCK_FIELDS) {
-        xdag_app_debug("Sent  : %016llx%016llx%016llx%016llx t=%llx res=%d",
-               h[3], h[2], h[1], h[0], fld[0].time, 0);
+                xdag_app_debug("Sent  : %016llx%016llx%016llx%016llx t=%llx res=%d",
+					   h[3], h[2], h[1], h[0], fld[0].time, 0);
 	}
 
 	return 0;

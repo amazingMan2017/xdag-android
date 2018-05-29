@@ -88,8 +88,7 @@ static uint64_t get_timestamp(void)
 {
 	struct timeval tp;
 	gettimeofday(&tp, 0);
-	uint64_t res = (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
-	return res;
+	return (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
 }
 
 // returns a time period index, where a period is 64 seconds long

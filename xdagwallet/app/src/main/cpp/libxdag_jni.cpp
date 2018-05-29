@@ -8,21 +8,6 @@
 #include <xdaglib/wrapper/xdagwrapper.h>
 #include "xdaglib/wrapper/xdagwrapper.h"
 
-typedef enum st_xdag_ui_msg{
-    ui_msg_set_password = 0x1001,
-    ui_msg_type_password = 0x1002,
-    ui_msg_retype_password = 0x1003,
-    ui_msg_set_random_keys = 0x1004,
-    ui_msg_xfer_coin = 0x1005,
-};
-
-std::string gPassword;
-std::string gRetypePassword;
-std::string gRadomKeys;
-std::string gRecvAccount;
-double gSendAmount;
-
-#define CLAZZ_XDAG_UINOTIFYMSG "com/xdag/wallet/XdagUiNotifyMsg"
 #define CLAZZ_XDAG_EVENT "com/xdag/wallet/XdagEvent"
 #define CLAZZ_XDAG_WRAPPER "com/xdag/wallet/XdagWrapper"
 
@@ -34,7 +19,6 @@ _JavaVM *gJvm;
 /**
  * mapping class of java layer
  * */
-static jclass gclazzXdagUiNotifyMsg = NULL;
 static jclass gclazzXdagEvent = NULL;
 static jclass gclazzXdagWrapper = NULL;
 static jmethodID gNewXdagEventMethod = NULL;
@@ -73,13 +57,6 @@ JNIEXPORT jint JNICALL  JNI_OnLoad(JavaVM *ajvm, void *reserved)
     /**
      * mapping java class to c++ class
      * */
-    tmpClazz = currentEnv->FindClass(CLAZZ_XDAG_UINOTIFYMSG);
-    if(tmpClazz == NULL){
-        LOGI(" can not find class  %s" ,CLAZZ_XDAG_UINOTIFYMSG);
-        return result;
-    }
-    gclazzXdagUiNotifyMsg = (jclass)currentEnv->NewGlobalRef(tmpClazz);
-
     tmpClazz = currentEnv->FindClass(CLAZZ_XDAG_EVENT);
     if(tmpClazz == NULL){
         LOGI(" can not find class  %s" ,CLAZZ_XDAG_EVENT);
@@ -119,60 +96,12 @@ extern "C"
 JNIEXPORT jint JNICALL Java_com_xdag_wallet_XdagWrapper_XdagNotifyNativeMsg(
         JNIEnv *env,
         jobject *obj,
-        jobject jmsg){
+        jstring jauthInfo){
     pthread_mutex_lock(&gWaitUiMutex);
     //put password into buffer
     LOGI("signal message to native");
-
-    jfieldID msgTypeField = env->GetFieldID(gclazzXdagUiNotifyMsg, "msgType", "I");
-
-    jint jmsgType = env->GetIntField(jmsg,msgTypeField);
-    int msgType = (int)jmsgType;
-    LOGI("message type is 0x%x",msgType);
-
-    switch (msgType){
-        case ui_msg_set_password:
-        case ui_msg_type_password:
-        {
-            LOGI("user type password from ui %s",gPassword.c_str());
-            jfieldID pwdField = env->GetFieldID(gclazzXdagUiNotifyMsg, "pwd", "Ljava/lang/String;");
-            jstring jpwd = (jstring)env->GetObjectField(jmsg,pwdField);
-            gPassword = env->GetStringUTFChars(jpwd,NULL);
-        }
-        break;
-        case ui_msg_retype_password:
-        {
-            jfieldID retypePwdField = env->GetFieldID(gclazzXdagUiNotifyMsg, "retypePwd", "Ljava/lang/String;");
-            jstring jretypePwd = (jstring)env->GetObjectField(jmsg,retypePwdField);
-            gRetypePassword = env->GetStringUTFChars(jretypePwd,NULL);
-            LOGI("user re-type password from ui %s",gRetypePassword.c_str());
-        }
-        break;
-        case ui_msg_set_random_keys:
-        {
-            jfieldID rdmKeysField = env->GetFieldID(gclazzXdagUiNotifyMsg, "rdmKeys", "Ljava/lang/String;");
-            jstring jradomKeys = (jstring)env->GetObjectField(jmsg,rdmKeysField);
-            gRadomKeys = env->GetStringUTFChars(jradomKeys,NULL);
-            LOGI("user set random keys from ui %s",gRadomKeys.c_str());
-        }
-        break;
-        case ui_msg_xfer_coin:
-        {
-            jfieldID recvAccountField = env->GetFieldID(gclazzXdagUiNotifyMsg, "recvAccount", "Ljava/lang/String;");
-            jfieldID sendAmountField = env->GetFieldID(gclazzXdagUiNotifyMsg, "sendAmount", "D");
-            jstring jrecvAccount = (jstring)env->GetObjectField(jmsg,recvAccountField);
-            jdouble jsendAmount = (jdouble)env->GetDoubleField(jmsg,sendAmountField);
-            gRecvAccount = env->GetStringUTFChars(jrecvAccount,NULL);
-            gSendAmount = (double)jsendAmount;
-            LOGI("user send %lf xdag coints to %s",gSendAmount,gRecvAccount.c_str());
-        }
-        break;
-        default:
-        {
-            LOGI("receive ukown ui msg type : %0xx",msgType);
-            return -1;
-        }
-    }
+    std::string authInfo = env->GetStringUTFChars(jauthInfo,NULL);
+    gAuthInfoMap.insert(std::pair<std::string, std::string>("set-password",authInfo));
 
     pthread_cond_signal(&gWaitUiCond);
     pthread_mutex_unlock(&gWaitUiMutex);
@@ -200,19 +129,24 @@ st_xdag_app_msg* XdagWalletProcessCallback(const void *call_back_object, st_xdag
             pthread_cond_wait(&gWaitUiCond,&gWaitUiMutex);
 
             st_xdag_app_msg* msg = NULL;
-            msg = (st_xdag_app_msg*)malloc(sizeof(st_xdag_app_msg));
+            std::map<std::string,std::string>::iterator it = gAuthInfoMap.find("set-password");
+            if(it != gAuthInfoMap.end()){
+                msg = (st_xdag_app_msg*)malloc(sizeof(st_xdag_app_msg));
 
-            if(event->event_type == en_event_set_pwd || event->event_type == en_event_type_pwd){
-                msg->xdag_pwd = strdup(gPassword.c_str());
-                LOGI("user typed password  %s",msg->xdag_pwd);
-            }
-            else if(event->event_type == en_event_retype_pwd ){
-                msg->xdag_retype_pwd = strdup(gRetypePassword.c_str());
-                LOGI("user re-typed password  info %s",msg->xdag_retype_pwd);
-            }
-            else if(event->event_type == en_event_set_rdm ){
-                msg->xdag_rdm = strdup(gRadomKeys.c_str());
-                LOGI("user typed random keys %s",msg->xdag_rdm);
+                if(event->event_type == en_event_set_pwd || event->event_type == en_event_type_pwd){
+                    msg->xdag_pwd = strdup(it->second.c_str());
+                    LOGI("user typed password  %s",msg->xdag_pwd);
+                }
+                else if(event->event_type == en_event_retype_pwd ){
+                    msg->xdag_retype_pwd = strdup(it->second.c_str());
+                    LOGI("user re-typed password  info %s",msg->xdag_retype_pwd);
+                }
+                else if(event->event_type == en_event_set_rdm ){
+                    msg->xdag_rdm = strdup(it->second.c_str());
+                    LOGI("user typed random keys %s",msg->xdag_rdm);
+                }
+
+                gAuthInfoMap.clear();
             }
 
             pthread_mutex_unlock(&gWaitUiMutex);

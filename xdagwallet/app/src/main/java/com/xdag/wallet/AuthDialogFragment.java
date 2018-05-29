@@ -13,12 +13,11 @@ import android.widget.EditText;
 public class AuthDialogFragment extends DialogFragment {
 
     private EditText tvAuthInfo = null;
-    private int mAuthType;
     private AuthInputListener mListener;
 
     public interface AuthInputListener
     {
-        void onAuthInputComplete(XdagUiNotifyMsg msg);
+        void onAuthInputComplete(String authInfo);
     }
 
     public void showAuthDialog(View view)
@@ -31,10 +30,6 @@ public class AuthDialogFragment extends DialogFragment {
         if(tvAuthInfo != null){
             tvAuthInfo.setHint(hintInfo);
         }
-    }
-
-    public void setAuthEventType(final int eventType){
-        mAuthType = eventType;
     }
 
     @Override
@@ -56,21 +51,7 @@ public class AuthDialogFragment extends DialogFragment {
                             public void onClick(DialogInterface dialog, int id)
                             {
                                 AuthInputListener listener = (AuthInputListener) getActivity();
-                                XdagUiNotifyMsg msg=new XdagUiNotifyMsg();
-                                msg.msgType = mAuthType;
-                                switch (mAuthType){
-                                    case XdagEvent.en_event_set_pwd:
-                                    case XdagEvent.en_event_type_pwd:
-                                        msg.pwd = tvAuthInfo.getText().toString();
-                                        break;
-                                    case XdagEvent.en_event_retype_pwd:
-                                        msg.retypePwd = tvAuthInfo.getText().toString();
-                                        break;
-                                    case XdagEvent.en_event_set_rdm:
-                                        msg.rdmKeys = tvAuthInfo.getText().toString();
-                                        break;
-                                }
-                                listener.onAuthInputComplete(msg);
+                                listener.onAuthInputComplete(tvAuthInfo.getText().toString());
                             }
                         }).setNegativeButton("Cancel", null);
         return builder.create();

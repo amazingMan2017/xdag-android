@@ -42,14 +42,14 @@ public class XdagWrapper {
         return XdagUnInit();
     }
 
-    public int XdagNotifyMsg(XdagUiNotifyMsg msg){return XdagNotifyNativeMsg(msg);}
+    public int XdagNotifyMsg(String authInfo){return XdagNotifyNativeMsg(authInfo);}
 
     private native int XdagInit();
     private native int XdagUnInit();
     private native int XdagConnect(String poolAddr);
     private native int XdagDisConnect();
     private native int XdagXfer(String address,String amount);
-    private native int XdagNotifyNativeMsg(XdagUiNotifyMsg msg);
+    private native int XdagNotifyNativeMsg(String authInfo);
 
 
     public void updateUi(XdagEvent event){

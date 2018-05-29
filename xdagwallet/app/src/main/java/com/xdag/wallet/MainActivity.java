@@ -202,19 +202,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Log.i(TAG,"event account is " + event.address);
         Log.i(TAG,"event balace is " + event.balance);
         //show dialog and ask user to type in password
-        switch (event.eventType){
-            case XdagEvent.en_event_set_pwd:
-            case XdagEvent.en_event_type_pwd:
-            case XdagEvent.en_event_retype_pwd:
-            case XdagEvent.en_event_set_rdm:
-            {
-                AuthDialogFragment authDialogFragment = new AuthDialogFragment();
-                authDialogFragment.setAuthEventType(event.eventType);
-                authDialogFragment.setAuthHintInfo(GetAuthHintString(event.eventType));
-                authDialogFragment.show(getFragmentManager(), "Auth Dialog");
-            }
-            break;
-        }
+        AuthDialogFragment authDialogFragment = new AuthDialogFragment();
+
+        authDialogFragment.setAuthHintInfo(GetAuthHintString(event.eventType));
+        authDialogFragment.show(getFragmentManager(), "Auth Dialog");
     }
 
     private String GetAuthHintString(final int eventType){
@@ -241,9 +232,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    public void onAuthInputComplete(XdagUiNotifyMsg msg) {
+    public void onAuthInputComplete(String authInfo) {
+        Log.i(TAG,"auth info is " + authInfo);
         //notify native thread
         XdagWrapper xdagWrapper = XdagWrapper.getInstance();
-        xdagWrapper.XdagNotifyMsg(msg);
+        xdagWrapper.XdagNotifyMsg(authInfo);
     }
 }
