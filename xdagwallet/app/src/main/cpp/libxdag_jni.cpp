@@ -305,6 +305,7 @@ JNIEXPORT jint JNICALL Java_com_xdag_wallet_XdagWrapper_XdagXfer(
 
     jboolean isCopy = JNI_TRUE;
     const char* address = env->GetStringUTFChars(recvAddress,&isCopy);
+    isCopy = JNI_TRUE;
     const char* amount = env->GetStringUTFChars(sendAmount,&isCopy);
 
     LOGI("xdag xfer coins recv address %s recv amount %s ",address,amount);

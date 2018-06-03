@@ -380,6 +380,7 @@ static int out_balances(void)
 	xdag_mem_init((xdag_main_time() - xdag_start_main_time()) << 17);
 	xdag_crypt_init(0);
 	memset(&d, 0, sizeof(struct out_balances_data));
+    xdag_app_debug("Out Balances Loading blocks from local storage...");
 	xdag_load_blocks(xdag_start_main_time() << 16, xdag_main_time() << 16, &i, add_block_callback);
 	xdag_traverse_all_blocks(&d, out_balances_callback);
 	qsort(d.blocks, d.nblocks, sizeof(struct xdag_field), out_sort_callback);
