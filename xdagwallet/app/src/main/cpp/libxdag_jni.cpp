@@ -154,6 +154,14 @@ st_xdag_app_msg* XdagWalletProcessCallback(const void *call_back_object, st_xdag
         }
         return NULL;
 
+        case en_event_update_state:
+        {
+            LOGI("receive xdag event  en_event_update_state xdag program state %d",event->xdag_program_state);
+            LOGI("receive xdag event  en_event_update_state xdag state %s",event->state);
+            invokeJavaCallBack(event);
+        }
+        return NULL;
+
         default:
             break;
     }
@@ -292,8 +300,15 @@ extern "C"
 JNIEXPORT jint JNICALL Java_com_xdag_wallet_XdagWrapper_XdagXfer(
         JNIEnv *env,
         jobject *obj,
-        jstring address,
-        jstring amount) {
+        jstring recvAddress,
+        jstring sendAmount) {
+
+    jboolean isCopy = JNI_TRUE;
+    const char* address = env->GetStringUTFChars(recvAddress,&isCopy);
+    const char* amount = env->GetStringUTFChars(sendAmount,&isCopy);
+
+    LOGI("xdag xfer coins recv address %s recv amount %s ",address,amount);
+    xdag_send_coin(amount,address);
 
     return 0;
 }

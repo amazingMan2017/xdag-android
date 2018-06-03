@@ -57,7 +57,9 @@ public class XdagWrapper {
     }
 
     public static void nativeCallbackFunc(XdagEvent event){
-        Log.i(TAG," receive event event type " + event.eventType + " balance " + event.balance
+        Log.i(TAG," receive event event type " + event.eventType
+                        + " balance " + event.balance
+                        + " state " + event.state
                         + " thread id " + Thread.currentThread().getId());
         EventBus.getDefault().post(event);
     }

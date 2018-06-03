@@ -410,6 +410,7 @@ static void *miner_net_thread(void *arg)
                 pthread_exit((void*)NULL);
             }
             ndata += res;
+            xdag_app_debug("receive block from pool ndata %d",ndata);
             if (ndata == maxndata) {
                 struct xdag_field *last = data + (ndata / sizeof(struct xdag_field) - 1);
 
@@ -418,7 +419,10 @@ static void *miner_net_thread(void *arg)
                 if (!memcmp(last->data, hash, sizeof(xdag_hashlow_t))) {
                     xdag_set_balance(hash, last->amount);
 
+                    xdag_app_debug("xdag last received block time %d",tt);
                     g_xdag_last_received = tt;
+                    xdag_app_debug("xdag set g_xdag_last_received to %d",g_xdag_last_received);
+
                     ndata = 0;
 
                     maxndata = sizeof(struct xdag_field);

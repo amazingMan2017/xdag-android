@@ -55,7 +55,7 @@ extern int xdag_send_packet(struct xdag_block *b, void *conn);
 /* see dnet_user_crypt_action */
 extern int xdag_user_crypt_action(unsigned *data, unsigned long long data_id, unsigned size, int action);
 
-extern time_t g_xdag_last_received;
+extern xdag_time_t g_xdag_last_received;
 
 #ifdef __cplusplus
 }

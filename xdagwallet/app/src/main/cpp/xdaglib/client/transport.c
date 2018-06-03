@@ -19,7 +19,7 @@
 #define REQUEST_WAIT    64
 #define N_CONNS         4096
 
-time_t g_xdag_last_received = 0;
+xdag_time_t g_xdag_last_received = 0;
 static void *reply_data;
 static void *(*reply_callback)(void *block, void *data) = 0;
 static void *reply_connection;
@@ -111,10 +111,12 @@ static int block_arrive_callback(void *packet, void *connection)
 
 	switch (xdag_type(b, 0)) {
 		case XDAG_FIELD_HEAD:
+            xdag_app_debug("xdag block XDAG_FIELD_HEAD arrived ");
 			xdag_sync_add_block(b, connection);
 			break;
 
 		case XDAG_FIELD_NONCE: {
+            xdag_app_debug("xdag block XDAG_FIELD_NONCE arrived ");
 			struct xdag_stats *s = (struct xdag_stats *)&b->field[2], *g = &g_xdag_stats;
 			xdag_time_t t0 = xdag_start_main_time(), t = xdag_main_time();
 			
@@ -132,8 +134,9 @@ static int block_arrive_callback(void *packet, void *connection)
 			if (s->total_nhosts   > g->total_nhosts)
 				g->total_nhosts = s->total_nhosts;
 			
-			g_xdag_last_received = time(0);
-			
+			g_xdag_last_received = (xdag_time_t)time(0);
+            xdag_app_debug("xdag last received XDAG_FIELD_NONCE block time %x",g_xdag_last_received);
+
 			xdag_netdb_receive((uint8_t*)&b->field[2] + sizeof(struct xdag_stats),
 									(xdag_type(b, 1) == XDAG_MESSAGE_SUMS_REPLY ? 6 : 14) * sizeof(struct xdag_field)
 									- sizeof(struct xdag_stats));

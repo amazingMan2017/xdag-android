@@ -220,8 +220,6 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 	while (start_time < end_time) {
 		sprintf(path, STORAGE_FILE, STORAGE_FILE_ARGS(start_time));
 
-        xdag_app_debug("load storage file path %s",path);
-
 		pthread_mutex_lock(&storage_mutex);
 		
 		f = fopen(path, "rb");

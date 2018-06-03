@@ -30,8 +30,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private EditText txtPool;
     private TextView tvBalance;
     private TextView tvAccount;
+    private TextView tvStatus;
     private EditText txtAmount;
     private EditText txtRecvAddress;
+
 
     private Button btnConncet;
     private Button btnDisConnect;
@@ -61,6 +63,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         txtPool = (EditText)findViewById(R.id.txt_pool);
         tvBalance = (TextView)findViewById(R.id.tv_balance);
         tvAccount = (TextView)findViewById(R.id.tv_account);
+        tvStatus = (TextView)findViewById(R.id.tv_status);
         txtAmount = (EditText)findViewById(R.id.txt_amount);
         txtRecvAddress = (EditText)findViewById(R.id.txt_recv_account);
 
@@ -189,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void onBtnXferConnectClicked() {
-        String address = tvAccount.getText().toString();
+        String address = txtRecvAddress.getText().toString();
         String amount = txtAmount.getText().toString();
         XdagWrapper xdagWrapper = XdagWrapper.getInstance();
         xdagWrapper.XdagXferToAddress(address,amount);
@@ -201,11 +204,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Log.i(TAG,"event event type is " + event.eventType);
         Log.i(TAG,"event account is " + event.address);
         Log.i(TAG,"event balace is " + event.balance);
-        //show dialog and ask user to type in password
-        AuthDialogFragment authDialogFragment = new AuthDialogFragment();
+        Log.i(TAG,"event state is " + event.state);
 
-        authDialogFragment.setAuthHintInfo(GetAuthHintString(event.eventType));
-        authDialogFragment.show(getFragmentManager(), "Auth Dialog");
+        switch (event.eventType){
+            case XdagEvent.en_event_type_pwd:
+            case XdagEvent.en_event_set_pwd:
+            case XdagEvent.en_event_retype_pwd:
+            case XdagEvent.en_event_set_rdm:
+            {
+                //show dialog and ask user to type in password
+                AuthDialogFragment authDialogFragment = new AuthDialogFragment();
+
+                authDialogFragment.setAuthHintInfo(GetAuthHintString(event.eventType));
+                authDialogFragment.show(getFragmentManager(), "Auth Dialog");
+            }
+            break;
+
+            case XdagEvent.en_event_update_state:
+            {
+                Log.i(TAG,"update xdag  ui ");
+                tvAccount.setText(event.address);
+                tvBalance.setText(event.balance);
+                tvStatus.setText(event.state);
+            }
+            break;
+
+        }
     }
 
     private String GetAuthHintString(final int eventType){

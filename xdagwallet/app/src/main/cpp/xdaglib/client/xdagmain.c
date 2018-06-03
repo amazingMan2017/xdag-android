@@ -424,6 +424,8 @@ int xdag_main(const char *pool_arg)
         }
     }
 
+    xdag_app_debug("xdag initialize g_xdag_last_received is %x ",g_xdag_last_received);
+
     memset(&g_xdag_stats, 0, sizeof(g_xdag_stats));
     memset(&g_xdag_extstats, 0, sizeof(g_xdag_extstats));
 
@@ -443,10 +445,10 @@ int xdag_main(const char *pool_arg)
     }
 
     xdag_app_debug("Initializing log system...");
-    if (xdag_signal_init()){
-        xdag_app_err(" xdag signal init error ");
-        return -1;
-    }
+//    if (xdag_signal_init()){
+//        xdag_app_err(" xdag signal init error ");
+//        return -1;
+//    }
 
     xdag_app_debug("Initializing cryptography...");
     if (xdag_crypt_init(1)){
