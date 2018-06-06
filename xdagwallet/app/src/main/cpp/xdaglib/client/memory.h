@@ -15,6 +15,8 @@ extern void *xdag_malloc(size_t size);
 
 extern void xdag_free(void *mem);
 
+extern int xdag_free_all(void);
+
 extern void xdag_mem_finish(void);
 
 extern void xdag_mem_uninit(void);
