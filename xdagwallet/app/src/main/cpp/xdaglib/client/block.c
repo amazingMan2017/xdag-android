@@ -86,11 +86,9 @@ static pthread_t g_block_thread_t;
 
 static uint64_t get_timestamp(void)
 {
-    xdag_app_debug("get_timestap   start");
 	struct timeval tp;
 	gettimeofday(&tp, 0);
     uint64_t result = (uint64_t)(unsigned long)tp.tv_sec << 10 | ((tp.tv_usec << 10) / 1000000);
-    xdag_app_debug("get_timestap   end %d",result);
 	return result;
 }
 
@@ -1006,7 +1004,9 @@ static void *work_thread(void *arg)
 	g_xdag_state = XDAG_STATE_LOAD;
     xdag_app_debug("Work Thread Loading blocks from local storage...");
 	xdag_show_state(0);
-	xdag_load_blocks(t, get_timestamp(), &t, add_block_callback);
+    xdag_time_t end_time = get_timestamp();
+    xdag_app_debug("load blocks from start time %llu  end time  %llu",t,end_time);
+	xdag_load_blocks_x(t, end_time, (void*)&t, add_block_callback);
 
 begin:
     g_is_block_thread_run = 1;
@@ -1064,16 +1064,7 @@ begin:
 
 			g_xdag_state = (g_light_mode ? (g_xdag_testnet ? XDAG_STATE_TTST : XDAG_STATE_TRYP)
 								 : (g_xdag_testnet ? XDAG_STATE_WTST : XDAG_STATE_WAIT));
-
 			conn_time = sync_time = 0;
-            xdag_app_debug("switch xdag state to XDAG_STATE_TRYP");
-			xdag_app_debug("work thread   t is  %d ", t);
-			xdag_app_debug("work thread   g_xdag_last_received << 10 is  %d ", (g_xdag_last_received << 10));
-			xdag_app_debug("work thread   3 * MAIN_CHAIN_PERIOD is  %d ", 3 * MAIN_CHAIN_PERIOD);
-            xdag_app_debug("work thread   t > (g_xdag_last_received << 10)  is  %d ", (t > (g_xdag_last_received << 10) ));
-            xdag_app_debug("work thread   t - (g_xdag_last_received << 10)  is  %d ", t - (g_xdag_last_received << 10));
-            xdag_app_debug("work thread   (t - (g_xdag_last_received << 10)) - (3 * MAIN_CHAIN_PERIOD)  is  %d ", (t - (g_xdag_last_received << 10)) - (3 * MAIN_CHAIN_PERIOD));
-            xdag_app_debug("work thread   t - (g_xdag_last_received << 10) > 3 * MAIN_CHAIN_PERIOD  is  %d ", (t - (g_xdag_last_received << 10) > 3 * MAIN_CHAIN_PERIOD));
 		} else {
 			if (!conn_time) {
 				conn_time = t;
@@ -1090,12 +1081,6 @@ begin:
 				g_xdag_state = (g_xdag_mining_threads > 0 ?
 									 (g_xdag_testnet ? XDAG_STATE_MTST : XDAG_STATE_MINE)
                                      : (g_xdag_testnet ? XDAG_STATE_PTST : XDAG_STATE_POOL));
-
-                xdag_app_debug("switch xdag state to XDAG_STATE_POOL");
-				xdag_app_debug("work thread   t is  %d ", t);
-                xdag_app_debug("work thread   g_xdag_last_received is  %d ", g_xdag_last_received);
-				xdag_app_debug("work thread   g_xdag_last_received << 10 is  %d ", (g_xdag_last_received << 10));
-				xdag_app_debug("work thread   3 * MAIN_CHAIN_PERIOD is  %d ", 3 * MAIN_CHAIN_PERIOD);
 
             } else if (t - sync_time > 8 * MAIN_CHAIN_PERIOD) {
 				g_xdag_state = (g_xdag_testnet ? XDAG_STATE_CTST : XDAG_STATE_CONN);

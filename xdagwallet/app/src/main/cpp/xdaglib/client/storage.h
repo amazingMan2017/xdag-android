@@ -21,6 +21,9 @@ extern int64_t xdag_storage_save(const struct xdag_block *b);
 extern struct xdag_block *xdag_storage_load(xdag_hash_t hash, xdag_time_t time, uint64_t pos,
 	struct xdag_block *buf);
 
+extern uint64_t xdag_load_blocks_x(xdag_time_t start_time, xdag_time_t end_time, void *data,
+								 void *(*callback)(void *block, void *data));
+
 /* Calls a callback for all blocks from the repository that are in specified time interval; returns the number of blocks */
 extern uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *data,
 									  void *(*callback)(void *block, void *data));

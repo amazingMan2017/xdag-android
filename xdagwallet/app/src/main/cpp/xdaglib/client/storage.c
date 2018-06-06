@@ -188,9 +188,11 @@ struct xdag_block *xdag_storage_load(xdag_hash_t hash, xdag_time_t time, uint64_
 
 	return buf;
 }
-
+#if defined(ANDROID) || defined(__ANDROID__)
+#define bufsize (1024)
+#else
 #define bufsize (0x100000 / sizeof(struct xdag_block))
-
+#endif
 static int sort_callback(const void *l, const void *r)
 {
 	struct xdag_block **L = (struct xdag_block **)l, **R = (struct xdag_block **)r;
@@ -201,11 +203,20 @@ static int sort_callback(const void *l, const void *r)
 	return 0;
 }
 
+uint64_t xdag_load_blocks_x(xdag_time_t start_time, xdag_time_t end_time, void *data, void *(*callback)(void *, void *)){
+
+	xdag_app_debug("xdag_load_blocks_x start_time %llu end_time %llu data %p callback %p",
+                   start_time,end_time,data,callback);
+
+	uint64_t res = xdag_load_blocks(start_time,end_time,data,callback);
+
+	return res;
+}
+
 /* Calls a callback for all blocks from the repository that are in specified time interval; returns the number of blocks */
 uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *data, void *(*callback)(void *, void *))
 {
-    xdag_app_debug("enter  xdag_load_blocks");
-
+    xdag_app_debug("start load blocks");
     struct xdag_block buf[bufsize], *pbuf[bufsize];
 	struct xdag_storage_sum s;
 	char path[256];
@@ -213,16 +224,12 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 	FILE *f;
 	uint64_t sum = 0, pos = 0, pos0, mask;
 	int64_t i, j, k, todo;
-
 	s.size = s.sum = 0;
-
 
 	while (start_time < end_time) {
 		sprintf(path, STORAGE_FILE, STORAGE_FILE_ARGS(start_time));
 		xdag_app_debug("load storage file path %s",path);
-
 		pthread_mutex_lock(&storage_mutex);
-		
 		f = fopen(path, "rb");
 		if (f) {
 			if (fseek(f, pos, SEEK_SET) < 0)
@@ -234,12 +241,12 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
             xdag_app_err("laod storage file %s failed error %s",path,strerror(errno));
 			todo = 0;
 		}
-		
 		pthread_mutex_unlock(&storage_mutex);
-		
+
 		pos0 = pos;
 
 		for (i = k = 0; i < todo; ++i, pos += sizeof(struct xdag_block)) {
+
 			if (buf[i].field[0].time >= start_time && buf[i].field[0].time < end_time) {
 				s.size += sizeof(struct xdag_block);
 
@@ -264,15 +271,15 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 		if (todo != bufsize) {
 			if (f) {
 				int res;
-		
+
 				pthread_mutex_lock(&storage_mutex);
-				
+
 				res = correct_storage_sums(start_time, &s, 0);
-				
+
 				pthread_mutex_unlock(&storage_mutex);
-				
+
 				if (res) break;
-				
+
 				s.size = s.sum = 0;
 				mask = (1l << 16) - 1;
 			} else if (sprintf(path, STORAGE_DIR3, STORAGE_DIR3_ARGS(start_time)), !stat(path, &st)) {
@@ -287,7 +294,7 @@ uint64_t xdag_load_blocks(xdag_time_t start_time, xdag_time_t end_time, void *da
 
 			start_time |= mask;
 			start_time++;
-			
+
 			pos = 0;
 		}
 	}
