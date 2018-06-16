@@ -97,12 +97,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     break;
                     case MSG_DISCONNECT_FROM_POOL:
                     {
-
+                        Log.i(TAG,"receive msg disconnet in thread id " + Thread.currentThread().getId());
+                        XdagWrapper xdagWrapper = XdagWrapper.getInstance();
+                        xdagWrapper.XdagDisConnectFromPool();
                     }
                     break;
                     case MSG_XFER_XDAG_COIN:
                     {
-
+                        Log.i(TAG,"receive msg xfer xdag coin thread id " + Thread.currentThread().getId());
+                        Bundle data = msg.getData();
+                        String address = data.getString("address");
+                        String amount = data.getString("amount");
+                        XdagWrapper xdagWrapper = XdagWrapper.getInstance();
+                        xdagWrapper.XdagXferToAddress(address,amount);
                     }
                     break;
                     default:
@@ -186,16 +193,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void onBtnDisConnectClicked() {
-        XdagWrapper xdagWrapper = XdagWrapper.getInstance();
-        xdagWrapper.XdagDisConnectFromPool();
-
+        Message msg = Message.obtain();
+        msg.arg1 = MSG_DISCONNECT_FROM_POOL;
+        xdagMessageHandler.sendMessage(msg);
     }
 
     private void onBtnXferConnectClicked() {
         String address = txtRecvAddress.getText().toString();
         String amount = txtAmount.getText().toString();
-        XdagWrapper xdagWrapper = XdagWrapper.getInstance();
-        xdagWrapper.XdagXferToAddress(address,amount);
+        Message msg = Message.obtain();
+        Bundle data = new Bundle();
+        data.putString("address",address);
+        data.putString("amount",amount);
+        msg.arg1 = MSG_XFER_XDAG_COIN;
+        msg.setData(data);
+        xdagMessageHandler.sendMessage(msg);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)

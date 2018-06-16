@@ -1001,9 +1001,12 @@ static int dfsrsa_isprime(dfsrsa_t *n, dfsrsa_t *work, int len){
 	       в степень содержатся в work и work2, неважно, в каком порядке,
 	       а это и будут a^((n-1)/2) и a^(n-1)
 	    */
-	    if ((dfsrsa_cmp(work,  o, len) && dfsrsa_cmp(work,  nm1, len))
-	     || (dfsrsa_cmp(work2, o, len) && dfsrsa_cmp(work2, nm1, len)))
-		return 0;
+		  if ((dfsrsa_cmp(work,  o, len) && dfsrsa_cmp(work,  nm1, len))
+			  || (dfsrsa_cmp(work2, o, len) && dfsrsa_cmp(work2, nm1, len))){
+			  return 0;
+		  }else{
+			  return 1;
+		  }
 	}
 	return 1;
 }
